@@ -217,7 +217,7 @@ for codigo_cajon, datos_cajon in dimensiones_cajones.items():
 for it in all_items:
     packer.add_item(it)
 
-packer.pack(bigger_first=True, distribute_items=False, number_of_decimals=0)
+packer.pack(bigger_first=True, distribute_items=True, number_of_decimals=0)
 
 unfit_names = {it.name for it in packer.unfit_items}
 
