@@ -10,7 +10,7 @@ import os
 # ======================================
 archivo_packing_list = r'C:\Users\bghiberto\Documents\Bruno Ghiberto\IA EN LOGÍSTICA\PROGRAMA PYTHON\C.L-01\PACKING LIST.xlsx'
 archivo_dimensiones = r'C:\Users\bghiberto\Documents\Bruno Ghiberto\IA EN LOGÍSTICA\PROGRAMA PYTHON\C.L-01\DIMENSIONES CAJAS-NORMALIZADO.xlsx'
-archivo_pesos = r'C:\Users\bghiberto\Documents\Bruno Ghiberto\IA EN LOGÍSTICA\PROGRAMA PYTHON\C.L-01\PESO_P.T.xlsx'  
+archivo_pesos = r'C:\Users\bghiberto\Documents\Bruno Ghiberto\IA EN LOGÍSTICA\PROGRAMA PYTHON\C.L-01\PESO_P.T.xlsx'
 
 # ======================================
 # CARGA DE DATOS DESDE EXCEL
@@ -40,6 +40,7 @@ pesos_productos_dict = pesos_productos.set_index('CODIGO')['PESO(kg)'].to_dict()
 dimensiones_cajas = dim_cajas.set_index('DESCRIPCION').to_dict('index')
 dimensiones_cajones = tam_cajones.set_index('CODIGO').to_dict('index')
 
+# Mapeamos cada producto a sus posibles opciones de caja
 producto_a_cajas = {}
 for _, row in caja_producto.iterrows():
     producto = str(row['CODIGO']).strip()
@@ -61,10 +62,12 @@ def obtener_peso_producto(codigo_producto):
     if peso is not None and not pd.isnull(peso):
         return float(peso)
     else:
-        # Peso por defecto si no se encuentra
+        # Si no encontramos el producto, asignar un peso fijo
         return 1.0
 
-# Crear el dataframe asignacion_cajas
+# ======================================
+# 1) CREAR EL DATAFRAME asignacion_cajas
+# ======================================
 asignacion_cajas_list = []
 item_num = 0
 
@@ -75,6 +78,7 @@ for _, producto_row in packing_list.iterrows():
 
     if codigo_producto in producto_a_cajas:
         opciones = producto_a_cajas[codigo_producto]
+        # Guardamos el volumen de cada caja
         for op in opciones:
             desc_caja = op['DESCRIPCION_CAJA']
             if desc_caja in dimensiones_cajas:
@@ -82,11 +86,12 @@ for _, producto_row in packing_list.iterrows():
             else:
                 op['VOLUMEN_m3'] = float('inf')
 
+        # Ordenamos las opciones de mayor a menor capacidad
         opciones.sort(key=lambda x: x['CANTIDAD_X_CAJA'], reverse=True)
         remaining_quantity = cantidad_producto
         peso_producto = obtener_peso_producto(codigo_producto)
 
-        # Empaquetar cajas completas
+        # Empaquetar en cajas completas
         for op in opciones:
             desc_caja = op['DESCRIPCION_CAJA']
             cant_x_caja = op['CANTIDAD_X_CAJA']
@@ -106,7 +111,7 @@ for _, producto_row in packing_list.iterrows():
                 })
             remaining_quantity -= num_full_boxes * cant_x_caja
 
-        # Sobrantes
+        # Sobrantes: tratar de usar una caja más pequeña
         if remaining_quantity > 0:
             opciones.sort(key=lambda x: x['CANTIDAD_X_CAJA'])
             caja_asignada = False
@@ -128,9 +133,8 @@ for _, producto_row in packing_list.iterrows():
                     remaining_quantity = 0
                     caja_asignada = True
                     break
-
+            # Si todavía hay restos, usamos la caja más grande
             if not caja_asignada and remaining_quantity > 0:
-                # Volver a la mayor
                 opciones.sort(key=lambda x: x['CANTIDAD_X_CAJA'], reverse=True)
                 op = opciones[0]
                 desc_caja = op['DESCRIPCION_CAJA']
@@ -152,13 +156,18 @@ for _, producto_row in packing_list.iterrows():
 
 asignacion_cajas = pd.DataFrame(asignacion_cajas_list)
 
-# Ordenar por peso
+# ======================================
+# 2) ORDENAR LAS CAJAS POR PESO
+# ======================================
 pesadas = asignacion_cajas[asignacion_cajas['PESO'] > 7.5].copy()
 livianas = asignacion_cajas[asignacion_cajas['PESO'] <= 7.5].copy()
+
 pesadas.sort_values(by='PESO', ascending=False, inplace=True)
 livianas.sort_values(by='PESO', ascending=False, inplace=True)
+
 asignacion_cajas = pd.concat([pesadas, livianas], ignore_index=True)
 
+# Unimos para obtener dimensiones (ANCHO, ALTO, LARGO)
 asignacion_cajas = asignacion_cajas.merge(
     dim_cajas[['DESCRIPCION', 'ANCHO_(mm)', 'ALTO_(mm)', 'LARGO_(mm)']],
     left_on='CAJA',
@@ -167,16 +176,18 @@ asignacion_cajas = asignacion_cajas.merge(
     suffixes=('_prod', '_dim')
 )
 
+# Arreglamos columnas repetidas
 if 'DESCRIPCION_prod' in asignacion_cajas.columns:
     asignacion_cajas.rename(columns={'DESCRIPCION_prod': 'DESCRIPCION'}, inplace=True)
 if 'DESCRIPCION_dim' in asignacion_cajas.columns:
     asignacion_cajas.drop(columns=['DESCRIPCION_dim'], inplace=True, errors='ignore')
 
-# Crear ítems para py3dbp
-# Importante: mantener la consistencia de ejes
-# width = LARGO_(mm)
-# height = ANCHO_(mm)
-# depth = ALTO_(mm)
+# ======================================
+# 3) CREAR ITEMS PARA PY3DBP
+#    width = LARGO_(mm)
+#    height = ANCHO_(mm)
+#    depth = ALTO_(mm)
+# ======================================
 all_items = []
 for index, row in asignacion_cajas.iterrows():
     it = Item(
@@ -186,50 +197,107 @@ for index, row in asignacion_cajas.iterrows():
         depth=float(row['ALTO_(mm)']),
         weight=float(row['PESO'])
     )
-    # Restringir rotaciones
+    # Asegurar rotaciones posibles
     it.rotation_type = RotationType.ALL
     all_items.append(it)
 
-packer = Packer()
+# ======================================
+# 4) CREACIÓN DINÁMICA DE CAJONES
+#    - Solo hay 2 tipos de cajones
+#    - Se van agregando más según necesidad
+# ======================================
+# Guardamos en una lista (bin_types) la info de cada tipo de cajón
+bin_types = []
+for cod_cajon, datos_cajon in dimensiones_cajones.items():
+    bin_types.append({
+        'name':  datos_cajon['DESCRIPCION'],
+        'width': float(datos_cajon['LARGO_(mm)']),
+        'height': float(datos_cajon['ANCHO_(mm)']),
+        'depth': float(datos_cajon['ALTO_(mm)']),
+        'max_weight': 100000.0  # arbitrario
+    })
 
-num_cajones_por_tipo = 100
-for codigo_cajon, datos_cajon in dimensiones_cajones.items():
-    descripcion_cajon = datos_cajon['DESCRIPCION']
-    largo_cajon = datos_cajon['LARGO_(mm)']
-    ancho_cajon = datos_cajon['ANCHO_(mm)']
-    alto_cajon = datos_cajon['ALTO_(mm)']
-    peso_maximo = 100000
+# Función para crear un Bin (cajón) a partir de la info anterior
+def crear_cajon(bin_info):
+    return Bin(
+        name=bin_info['name'],
+        width=bin_info['width'],
+        height=bin_info['height'],
+        depth=bin_info['depth'],
+        max_weight=bin_info['max_weight']
+    )
 
-    # Mantener el mismo orden de dimensiones que en ítems
-    # width = largo_cajon
-    # height = ancho_cajon
-    # depth = alto_cajon
-    for i in range(num_cajones_por_tipo):
-        cajon = Bin(
-            name=f"{descripcion_cajon}",
-            width=float(largo_cajon),
-            height=float(ancho_cajon),
-            depth=float(alto_cajon),
-            max_weight=peso_maximo
+def pack_con_bins_dinamicos(items, bin_types, max_iters=20):
+    """
+    Crea bins dinámicamente para empaquetar 'items'.
+    Devuelve (packer, unfit_items) al final.
+    """
+    # Empezamos con 1 bin de cada tipo (2 bins si hay 2 tipos)
+    bins_actuales = [crear_cajon(bt) for bt in bin_types]
+
+    iter_count = 0
+    while True:
+        iter_count += 1
+
+        # Creamos un packer nuevo en cada iteración
+        packer = Packer()
+        # Agregamos los bins actuales
+        for b in bins_actuales:
+            packer.add_bin(b)
+        # Agregamos todos los items (py3dbp volverá a intentar empaquetarlos)
+        for it in items:
+            packer.add_item(it)
+
+        # Empaquetar
+        packer.pack(
+            bigger_first=True,
+            distribute_items=False,
+            number_of_decimals=0
         )
-        packer.add_bin(cajon)
 
-for it in all_items:
-    packer.add_item(it)
+        unfit = packer.unfit_items
+        if not unfit:
+            # Significa que todo cupo
+            return packer, []
+        else:
+            # Si no caben todos y no excedimos iteraciones
+            if iter_count >= max_iters:
+                # Devolvemos lo que no cupo
+                return packer, unfit
 
-packer.pack(bigger_first=True, distribute_items=True, number_of_decimals=0)
+            # Agregamos un bin (cajón) más de *cada* tipo para el siguiente intento
+            for bt in bin_types:
+                bins_actuales.append(crear_cajon(bt))
 
-unfit_names = {it.name for it in packer.unfit_items}
+# Empaquetamos dinámicamente
+packer, unfit_items = pack_con_bins_dinamicos(all_items, bin_types, max_iters=20)
 
+unfit_names = {it.name for it in unfit_items}
+
+# ======================================
+# 5) RECOPILAR INFORMACIÓN DE BIN / ITEM
+# ======================================
 item_to_cajon = {}
 cajon_counter = 0
+
+# packer.bins ya es la lista final de contenedores usados
+# Sin embargo, ojo que py3dbp, por defecto, mantiene TODOS los bins,
+# incluso los que quedaron vacíos sin items.
 for b in packer.bins:
     if b.items:
+        # Solo incrementamos el contador si el bin se usó realmente
         cajon_counter += 1
         descripcion_cajon = b.name
         for it in b.items:
             item_name = it.name
-            item_to_cajon[item_name] = (descripcion_cajon, cajon_counter, it.position, it.width, it.height, it.depth)
+            item_to_cajon[item_name] = (
+                descripcion_cajon, 
+                cajon_counter,
+                it.position, 
+                it.width, 
+                it.height, 
+                it.depth
+            )
 
 def asignar_cajon(item_id):
     key = f"ITEM_{item_id}"
@@ -243,43 +311,49 @@ def asignar_cajon(item_id):
 asignacion_cajas['DESCRIPCION DE CAJON'] = asignacion_cajas['ITEM'].apply(lambda x: asignar_cajon(x)[0])
 asignacion_cajas['# DE CAJON'] = asignacion_cajas['ITEM'].apply(lambda x: asignar_cajon(x)[1])
 
+# Exportar resultados a Excel
 asignacion_cajas.to_excel("asignacion_cajas.xlsx", index=False)
 print("Archivo exportado: asignacion_cajas.xlsx")
 
 if unfit_names:
-    print("Algunos ítems no se asignaron.")
+    print("Algunos ítems NO se asignaron, incluso tras bins dinámicos.")
 else:
-    print("Todos los ítems fueron asignados.")
+    print("Todos los ítems fueron asignados con bins dinámicos.")
 
 # ======================================
-# VISUALIZACIÓN CON PLOTLY
+# 6) VISUALIZACIÓN CON PLOTLY
 # ======================================
 
 if not os.path.exists('cajones_3d'):
     os.makedirs('cajones_3d')
 
 colors = [
-    'blue', 'red', 'green', 'orange', 'purple', 'yellow', 'cyan', 'magenta', 'lime', 'pink'
+    'blue', 'red', 'green', 'orange', 'purple', 'yellow', 
+    'cyan', 'magenta', 'lime', 'pink'
 ]
 
-# Caras del cubo (ítem y cajón)
+# Índices para plotly (caras de cada cubo)
 i_faces = [0,0,4,4,0,0,1,1,0,0,3,3]
 j_faces = [1,2,5,6,3,7,2,6,1,5,2,6]
 k_faces = [2,3,6,7,7,4,6,5,5,4,6,7]
 
-for idx_b, b in enumerate(packer.bins, start=1):
+# Vamos a enumerar sólo los bins que se usaron con items
+plot_bin_counter = 0
+for b in packer.bins:
     if not b.items:
         continue
 
+    plot_bin_counter += 1
     fig = go.Figure()
 
-    w = b.width   # X = width = largo
-    h = b.height  # Y = height = ancho
-    d = b.depth   # Z = depth = alto
+    w = b.width   # X = width = LARGO
+    h = b.height  # Y = height = ANCHO
+    d = b.depth   # Z = depth = ALTO
 
-    X_cajon = [0,    w,    w,    0,    0,    w,    w,    0   ]
-    Y_cajon = [0,    0,    h,    h,    0,    0,    h,    h   ]
-    Z_cajon = [0,    0,    0,    0,    d,    d,    d,    d   ]
+    # Coordenadas del cajón
+    X_cajon = [0,    w,    w,    0,    0,    w,    w,    0]
+    Y_cajon = [0,    0,    h,    h,    0,    0,    h,    h]
+    Z_cajon = [0,    0,    0,    0,    d,    d,    d,    d]
 
     fig.add_trace(go.Mesh3d(
         x=X_cajon,
@@ -289,7 +363,7 @@ for idx_b, b in enumerate(packer.bins, start=1):
         color='black',
         opacity=0.95,
         flatshading=True,
-        name=f'Cajón {idx_b}'
+        name=f'Cajón {plot_bin_counter}'
     ))
 
     color_index = 0
@@ -302,8 +376,10 @@ for idx_b, b in enumerate(packer.bins, start=1):
         Y = [iy, iy, iy+ih, iy+ih, iy, iy, iy+ih, iy+ih]
         Z = [iz, iz, iz, iz, iz+id_, iz+id_, iz+id_, iz+id_]
 
+        # Sacamos el ITEM_XX
         item_id = int(it.name.split('_')[1])
         row_item = asignacion_cajas[asignacion_cajas['ITEM'] == item_id].iloc[0]
+
         hover_text = (f"ITEM: {item_id}<br>"
                       f"CODIGO: {row_item['CODIGO']}<br>"
                       f"DESCRIPCION: {row_item['DESCRIPCION']}<br>"
@@ -329,19 +405,18 @@ for idx_b, b in enumerate(packer.bins, start=1):
             zaxis_title='Z (mm) - ALTO',
             aspectmode='data'
         ),
-        title=f'Representación 3D del Cajón {idx_b}'
+        title=f'Representación 3D del Cajón {plot_bin_counter}'
     )
 
-    fig.write_html(f'cajones_3d/cajon_{idx_b}.html')
+    fig.write_html(f'cajones_3d/cajon_{plot_bin_counter}.html')
 
 print("Visualizaciones 3D generadas en la carpeta cajones_3d.")
 
-# Verificación final de sobresalir
+# Verificación final para detectar ítems que sobresalen
 for b in packer.bins:
     for it in b.items:
         ix, iy, iz = it.position
         iw, ih, id_ = it.width, it.height, it.depth
-        if ix + iw > b.width or iy + ih > b.height or iz + id_ > b.depth:
+        # si se pasa en X, Y o Z
+        if (ix + iw > b.width) or (iy + ih > b.height) or (iz + id_ > b.depth):
             print(f"El ítem {it.name} sobresale del cajón {b.name}")
-
-
