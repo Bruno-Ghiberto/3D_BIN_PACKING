@@ -1,347 +1,393 @@
+import os
+import re
 import pandas as pd
 import numpy as np
-from py3dbp import Packer, Bin, Item
-from py3dbp.constants import RotationType
-import plotly.graph_objects as go
-import os
+from ortools.sat.python import cp_model
 
 # ======================================
-# CONFIGURACIÓN DE ARCHIVOS DE ENTRADA
+# 1. FUNCIÓN PARA DETECTAR ENGRANAJES (opcional)
 # ======================================
-archivo_packing_list = r'C:\Users\bghiberto\Documents\Bruno Ghiberto\IA EN LOGÍSTICA\PROGRAMA PYTHON\C.L-01\PACKING LIST.xlsx'
-archivo_dimensiones = r'C:\Users\bghiberto\Documents\Bruno Ghiberto\IA EN LOGÍSTICA\PROGRAMA PYTHON\C.L-01\DIMENSIONES CAJAS-NORMALIZADO.xlsx'
-archivo_pesos = r'C:\Users\bghiberto\Documents\Bruno Ghiberto\IA EN LOGÍSTICA\PROGRAMA PYTHON\C.L-01\PESO_P.T.xlsx'  
+def es_engranaje(codigo_producto):
+    patron = r'^1\.\d{3}1\.\d{7}$'
+    return bool(re.match(patron, codigo_producto.strip()))
 
-# ======================================
-# CARGA DE DATOS DESDE EXCEL
-# ======================================
-dim_cajas = pd.read_excel(archivo_dimensiones, sheet_name='TAMAÑO-CAJAS')
-caja_producto = pd.read_excel(archivo_dimensiones, sheet_name='CAJA-PRODUCTO')
-tam_cajones = pd.read_excel(archivo_dimensiones, sheet_name='TAMAÑO-CAJONES')
-packing_list = pd.read_excel(archivo_packing_list, sheet_name='P.L.')
-pesos_productos = pd.read_excel(archivo_pesos, sheet_name='PRODUCTO-PESO')
-
-for df in [dim_cajas, caja_producto, tam_cajones, packing_list, pesos_productos]:
-    df.columns = df.columns.str.strip()
-
-dim_cajas['DESCRIPCION'] = dim_cajas['DESCRIPCION'].astype(str).str.strip()
-
-caja_cols = ['CAJA_OP_1', 'CAJA_OP_2', 'CAJA_OP_3']
-cantidad_cols = ['CANTIDAD x CAJA_OP_1', 'CANTIDAD_x_CAJA_OP_2', 'CANTIDAD_x_CAJA_OP_3']
-for col in caja_cols:
-    if col in caja_producto.columns:
-        caja_producto[col] = caja_producto[col].astype(str).str.strip()
-
-pesos_productos['CODIGO'] = pesos_productos['CODIGO'].astype(str).str.strip()
-pesos_productos['PESO(kg)'] = pd.to_numeric(pesos_productos['PESO(kg)'], errors='coerce')
-packing_list['CODIGO'] = packing_list['CODIGO'].astype(str).str.strip()
-
-pesos_productos_dict = pesos_productos.set_index('CODIGO')['PESO(kg)'].to_dict()
-dimensiones_cajas = dim_cajas.set_index('DESCRIPCION').to_dict('index')
-dimensiones_cajones = tam_cajones.set_index('CODIGO').to_dict('index')
-
-producto_a_cajas = {}
-for _, row in caja_producto.iterrows():
-    producto = str(row['CODIGO']).strip()
-    opciones = []
-    for caja_col, cant_col in zip(caja_cols, cantidad_cols):
-        caja_desc = row.get(caja_col)
-        cantidad_por_caja = row.get(cant_col)
-        if pd.notna(caja_desc) and pd.notna(cantidad_por_caja):
-            caja_desc = str(caja_desc).strip()
-            opciones.append({
-                'DESCRIPCION_CAJA': caja_desc,
-                'CANTIDAD_X_CAJA': int(cantidad_por_caja)
-            })
-    if opciones:
-        producto_a_cajas[producto] = opciones
-
-def obtener_peso_producto(codigo_producto):
+def obtener_peso_producto(codigo_producto, pesos_productos_dict):
     peso = pesos_productos_dict.get(codigo_producto)
     if peso is not None and not pd.isnull(peso):
         return float(peso)
     else:
-        # Peso por defecto si no se encuentra
-        return 1.0
+        return 1.0  # valor por defecto
 
-# Crear el dataframe asignacion_cajas
-asignacion_cajas_list = []
-item_num = 0
+def build_dataframes(
+    archivo_packing_list, 
+    archivo_dimensiones, 
+    archivo_pesos
+):
+    """
+    Función que lee los excels y crea los dataframes 
+    (packing_list, caja_producto, dim_cajas, tam_cajones, pesos_productos).
+    """
+    dim_cajas = pd.read_excel(archivo_dimensiones, sheet_name='TAMAÑO-CAJAS')
+    caja_producto = pd.read_excel(archivo_dimensiones, sheet_name='CAJA-PRODUCTO')
+    tam_cajones = pd.read_excel(archivo_dimensiones, sheet_name='TAMAÑO-CAJONES')
+    packing_list = pd.read_excel(archivo_packing_list, sheet_name='P.L.')
+    pesos_productos = pd.read_excel(archivo_pesos, sheet_name='PRODUCTO-PESO')
 
-for _, producto_row in packing_list.iterrows():
-    codigo_producto = str(producto_row['CODIGO']).strip()
-    descripcion_producto = producto_row['DESCRIPCION']
-    cantidad_producto = int(producto_row['CANTIDAD'])
+    # Limpieza de columnas y normalización
+    for df in [dim_cajas, caja_producto, tam_cajones, packing_list, pesos_productos]:
+        df.columns = df.columns.str.strip()
 
-    if codigo_producto in producto_a_cajas:
-        opciones = producto_a_cajas[codigo_producto]
-        for op in opciones:
-            desc_caja = op['DESCRIPCION_CAJA']
-            if desc_caja in dimensiones_cajas:
-                op['VOLUMEN_m3'] = dimensiones_cajas[desc_caja]['VOLUMEN_m3']
-            else:
-                op['VOLUMEN_m3'] = float('inf')
+    # Ajustes específicos
+    dim_cajas['DESCRIPCION'] = dim_cajas['DESCRIPCION'].astype(str).str.strip()
 
-        opciones.sort(key=lambda x: x['CANTIDAD_X_CAJA'], reverse=True)
-        remaining_quantity = cantidad_producto
-        peso_producto = obtener_peso_producto(codigo_producto)
+    caja_cols = ['CAJA_OP_1', 'CAJA_OP_2', 'CAJA_OP_3']
+    cantidad_cols = ['CANTIDAD x CAJA_OP_1', 'CANTIDAD_x_CAJA_OP_2', 'CANTIDAD_x_CAJA_OP_3']
+    for col in caja_cols:
+        if col in caja_producto.columns:
+            caja_producto[col] = caja_producto[col].astype(str).str.strip()
 
-        # Empaquetar cajas completas
-        for op in opciones:
-            desc_caja = op['DESCRIPCION_CAJA']
-            cant_x_caja = op['CANTIDAD_X_CAJA']
-            num_full_boxes = remaining_quantity // cant_x_caja
-            for _ in range(num_full_boxes):
-                item_num += 1
-                peso_paquete = peso_producto * cant_x_caja
-                volumen_caja = op['VOLUMEN_m3']
-                asignacion_cajas_list.append({
-                    'ITEM': item_num,
-                    'CAJA': desc_caja,
-                    'CODIGO': codigo_producto,
-                    'DESCRIPCION': descripcion_producto,
-                    'CANTIDAD': cant_x_caja,
-                    'PESO': peso_paquete,
-                    'VOLUMEN': volumen_caja
+    pesos_productos['CODIGO'] = pesos_productos['CODIGO'].astype(str).str.strip()
+    pesos_productos['PESO(kg)'] = pd.to_numeric(pesos_productos['PESO(kg)'], errors='coerce')
+    packing_list['CODIGO'] = packing_list['CODIGO'].astype(str).str.strip()
+
+    return dim_cajas, caja_producto, tam_cajones, packing_list, pesos_productos
+
+
+def build_asignacion_cajas(
+    packing_list, 
+    caja_producto, 
+    dim_cajas, 
+    pesos_productos
+):
+    """
+    Lógica para generar el dataframe 'asignacion_cajas',
+    donde cada fila representa una 'caja' a empacar (un ítem en py3dbp).
+    """
+    # Diccionarios para acceso rápido
+    pesos_productos_dict = pesos_productos.set_index('CODIGO')['PESO(kg)'].to_dict()
+    dimensiones_cajas = dim_cajas.set_index('DESCRIPCION').to_dict('index')
+
+    # Diccionario: producto -> [opciones de cajas]
+    producto_a_cajas = {}
+    caja_cols = ['CAJA_OP_1', 'CAJA_OP_2', 'CAJA_OP_3']
+    cantidad_cols = ['CANTIDAD x CAJA_OP_1', 'CANTIDAD_x_CAJA_OP_2', 'CANTIDAD_x_CAJA_OP_3']
+    for _, row in caja_producto.iterrows():
+        producto = str(row['CODIGO']).strip()
+        opciones = []
+        for caja_col, cant_col in zip(caja_cols, cantidad_cols):
+            caja_desc = row.get(caja_col)
+            cantidad_por_caja = row.get(cant_col)
+            if pd.notna(caja_desc) and pd.notna(cantidad_por_caja):
+                caja_desc = str(caja_desc).strip()
+                opciones.append({
+                    'DESCRIPCION_CAJA': caja_desc,
+                    'CANTIDAD_X_CAJA': int(cantidad_por_caja)
                 })
-            remaining_quantity -= num_full_boxes * cant_x_caja
+        if opciones:
+            producto_a_cajas[producto] = opciones
 
-        # Sobrantes
-        if remaining_quantity > 0:
-            opciones.sort(key=lambda x: x['CANTIDAD_X_CAJA'])
-            caja_asignada = False
+    asignacion_cajas_list = []
+    item_num = 0
+
+    for _, producto_row in packing_list.iterrows():
+        codigo_producto = str(producto_row['CODIGO']).strip()
+        descripcion_producto = producto_row['DESCRIPCION']
+        cantidad_producto = int(producto_row['CANTIDAD'])
+
+        if codigo_producto in producto_a_cajas:
+            opciones = producto_a_cajas[codigo_producto]
+            # Insertar volumen, etc., si hace falta
             for op in opciones:
-                if op['CANTIDAD_X_CAJA'] >= remaining_quantity:
+                desc_caja = op['DESCRIPCION_CAJA']
+                if desc_caja in dimensiones_cajas:
+                    op['VOLUMEN_m3'] = dimensiones_cajas[desc_caja]['VOLUMEN_m3']
+                else:
+                    op['VOLUMEN_m3'] = float('inf')
+            
+            # Ordenar por CANTIDAD_X_CAJA descendente
+            opciones.sort(key=lambda x: x['CANTIDAD_X_CAJA'], reverse=True)
+            remaining_quantity = cantidad_producto
+            peso_producto = obtener_peso_producto(codigo_producto, pesos_productos_dict)
+
+            # Llenar cajas completas
+            for op in opciones:
+                desc_caja = op['DESCRIPCION_CAJA']
+                cant_x_caja = op['CANTIDAD_X_CAJA']
+                num_full_boxes = remaining_quantity // cant_x_caja
+                for _ in range(num_full_boxes):
+                    item_num += 1
+                    peso_paquete = peso_producto * cant_x_caja
+                    asignacion_cajas_list.append({
+                        'ITEM': item_num,
+                        'CAJA': desc_caja,
+                        'CODIGO': codigo_producto,
+                        'DESCRIPCION': descripcion_producto,
+                        'CANTIDAD': cant_x_caja,
+                        'PESO': peso_paquete
+                    })
+                remaining_quantity -= num_full_boxes * cant_x_caja
+
+            # Sobran unidades
+            if remaining_quantity > 0:
+                # Ordenar por CANTIDAD_X_CAJA ascendente
+                opciones.sort(key=lambda x: x['CANTIDAD_X_CAJA'])
+                caja_asignada = False
+                for op in opciones:
+                    if op['CANTIDAD_X_CAJA'] >= remaining_quantity:
+                        desc_caja = op['DESCRIPCION_CAJA']
+                        item_num += 1
+                        peso_paquete = peso_producto * remaining_quantity
+                        asignacion_cajas_list.append({
+                            'ITEM': item_num,
+                            'CAJA': desc_caja,
+                            'CODIGO': codigo_producto,
+                            'DESCRIPCION': descripcion_producto,
+                            'CANTIDAD': remaining_quantity,
+                            'PESO': peso_paquete
+                        })
+                        remaining_quantity = 0
+                        caja_asignada = True
+                        break
+                if not caja_asignada and remaining_quantity > 0:
+                    # Si ninguna menor lo soporta, usar la mayor
+                    opciones.sort(key=lambda x: x['CANTIDAD_X_CAJA'], reverse=True)
+                    op = opciones[0]
                     desc_caja = op['DESCRIPCION_CAJA']
                     item_num += 1
                     peso_paquete = peso_producto * remaining_quantity
-                    volumen_caja = op['VOLUMEN_m3']
                     asignacion_cajas_list.append({
                         'ITEM': item_num,
                         'CAJA': desc_caja,
                         'CODIGO': codigo_producto,
                         'DESCRIPCION': descripcion_producto,
                         'CANTIDAD': remaining_quantity,
-                        'PESO': peso_paquete,
-                        'VOLUMEN': volumen_caja
+                        'PESO': peso_paquete
                     })
                     remaining_quantity = 0
-                    caja_asignada = True
-                    break
+        else:
+            print(f"No hay cajas definidas para el producto '{codigo_producto}'")
 
-            if not caja_asignada and remaining_quantity > 0:
-                # Volver a la mayor
-                opciones.sort(key=lambda x: x['CANTIDAD_X_CAJA'], reverse=True)
-                op = opciones[0]
-                desc_caja = op['DESCRIPCION_CAJA']
-                item_num += 1
-                peso_paquete = peso_producto * remaining_quantity
-                volumen_caja = op['VOLUMEN_m3']
-                asignacion_cajas_list.append({
-                    'ITEM': item_num,
-                    'CAJA': desc_caja,
-                    'CODIGO': codigo_producto,
-                    'DESCRIPCION': descripcion_producto,
-                    'CANTIDAD': remaining_quantity,
-                    'PESO': peso_paquete,
-                    'VOLUMEN': volumen_caja
-                })
-                remaining_quantity = 0
-    else:
-        print(f"No hay cajas definidas para el producto '{codigo_producto}'")
-
-asignacion_cajas = pd.DataFrame(asignacion_cajas_list)
-
-# Ordenar por peso
-pesadas = asignacion_cajas[asignacion_cajas['PESO'] > 7.5].copy()
-livianas = asignacion_cajas[asignacion_cajas['PESO'] <= 7.5].copy()
-pesadas.sort_values(by='PESO', ascending=False, inplace=True)
-livianas.sort_values(by='PESO', ascending=False, inplace=True)
-asignacion_cajas = pd.concat([pesadas, livianas], ignore_index=True)
-
-asignacion_cajas = asignacion_cajas.merge(
-    dim_cajas[['DESCRIPCION', 'ANCHO_(mm)', 'ALTO_(mm)', 'LARGO_(mm)']],
-    left_on='CAJA',
-    right_on='DESCRIPCION',
-    how='left',
-    suffixes=('_prod', '_dim')
-)
-
-if 'DESCRIPCION_prod' in asignacion_cajas.columns:
-    asignacion_cajas.rename(columns={'DESCRIPCION_prod': 'DESCRIPCION'}, inplace=True)
-if 'DESCRIPCION_dim' in asignacion_cajas.columns:
-    asignacion_cajas.drop(columns=['DESCRIPCION_dim'], inplace=True, errors='ignore')
-
-# Crear ítems para py3dbp
-# Importante: mantener la consistencia de ejes
-# width = LARGO_(mm)
-# height = ANCHO_(mm)
-# depth = ALTO_(mm)
-all_items = []
-for index, row in asignacion_cajas.iterrows():
-    it = Item(
-        name=f"ITEM_{int(row['ITEM'])}",
-        width=float(row['LARGO_(mm)']),
-        height=float(row['ANCHO_(mm)']),
-        depth=float(row['ALTO_(mm)']),
-        weight=float(row['PESO'])
+    asignacion_cajas = pd.DataFrame(asignacion_cajas_list)
+    # Ahora unimos con dimensiones de la CAJA
+    asignacion_cajas = asignacion_cajas.merge(
+        dim_cajas[['DESCRIPCION', 'ANCHO_(mm)', 'ALTO_(mm)', 'LARGO_(mm)']],
+        left_on='CAJA',
+        right_on='DESCRIPCION',
+        how='left'
     )
-    # Restringir rotaciones
-    it.rotation_type = RotationType.ALL
-    all_items.append(it)
+    if 'DESCRIPCION' in asignacion_cajas.columns.duplicated():
+        # Manejo de colisiones de columnas (si se da)
+        pass
 
-packer = Packer()
+    # Reordenar / renombrar si hace falta
+    return asignacion_cajas
 
-num_cajones_por_tipo = 100
-for codigo_cajon, datos_cajon in dimensiones_cajones.items():
-    descripcion_cajon = datos_cajon['DESCRIPCION']
-    largo_cajon = datos_cajon['LARGO_(mm)']
-    ancho_cajon = datos_cajon['ANCHO_(mm)']
-    alto_cajon = datos_cajon['ALTO_(mm)']
-    peso_maximo = 100000
-
-    # Mantener el mismo orden de dimensiones que en ítems
-    # width = largo_cajon
-    # height = ancho_cajon
-    # depth = alto_cajon
-    for i in range(num_cajones_por_tipo):
-        cajon = Bin(
-            name=f"{descripcion_cajon}",
-            width=float(largo_cajon),
-            height=float(ancho_cajon),
-            depth=float(alto_cajon),
-            max_weight=peso_maximo
-        )
-        packer.add_bin(cajon)
-
-for it in all_items:
-    packer.add_item(it)
-
-packer.pack(bigger_first=True, distribute_items=True, number_of_decimals=1)
-
-unfit_names = {it.name for it in packer.unfit_items}
-
-item_to_cajon = {}
-cajon_counter = 0
-for b in packer.bins:
-    if b.items:
-        cajon_counter += 1
-        descripcion_cajon = b.name
-        for it in b.items:
-            item_name = it.name
-            item_to_cajon[item_name] = (descripcion_cajon, cajon_counter, it.position, it.width, it.height, it.depth)
-
-def asignar_cajon(item_id):
-    key = f"ITEM_{item_id}"
-    if key in unfit_names:
-        return ("SIN ASIGNAR", None)
-    elif key in item_to_cajon:
-        return (item_to_cajon[key][0], item_to_cajon[key][1])
-    else:
-        return ("SIN ASIGNAR", None)
-
-asignacion_cajas['DESCRIPCION DE CAJON'] = asignacion_cajas['ITEM'].apply(lambda x: asignar_cajon(x)[0])
-asignacion_cajas['# DE CAJON'] = asignacion_cajas['ITEM'].apply(lambda x: asignar_cajon(x)[1])
-
-asignacion_cajas.to_excel("asignacion_cajas.xlsx", index=False)
-print("Archivo exportado: asignacion_cajas.xlsx")
-
-if unfit_names:
-    print("Algunos ítems no se asignaron.")
-else:
-    print("Todos los ítems fueron asignados.")
 
 # ======================================
-# VISUALIZACIÓN CON PLOTLY
+# 2. ESQUELETO DEL SOLVER OR-TOOLS
 # ======================================
 
-if not os.path.exists('cajones_3d'):
-    os.makedirs('cajones_3d')
+def solve_3d_bin_packing(asignacion_cajas, bin_dims, max_bins):
+    """
+    Dado el dataframe asignacion_cajas con la info de cada 'ítem' (caja a empacar),
+    y las dimensiones del bin (W,H,D), resuelve con OR-Tools CP-SAT 
+    el problema de bin packing 3D.
+    
+    bin_dims: (W, H, D) en mm
+    max_bins: cantidad máxima de bins (por ejemplo 9, si sabemos que no usaremos más)
+    """
+    model = cp_model.CpModel()
 
-colors = [
-    'blue', 'red', 'green', 'orange', 'purple', 'yellow', 'cyan', 'magenta', 'lime', 'pink'
-]
+    # Preparamos la data
+    # items = [ (idx, w_i, h_i, d_i, peso_i, etc...) ]
+    items = []
+    for _, row in asignacion_cajas.iterrows():
+        item_id = int(row['ITEM'])
+        ancho = float(row['ANCHO_(mm)'])
+        alto  = float(row['ALTO_(mm)'])
+        largo = float(row['LARGO_(mm)'])
+        peso  = float(row['PESO'])  # si quieres usarlo
+        # Podrías reordenar ancho, alto, largo a conveniencia.
+        # De momento, supongamos (x,y,z) = (ancho, alto, largo).
+        # Lo importante es ser consistente luego.
+        items.append( (item_id, ancho, alto, largo, peso) )
 
-# Caras del cubo (ítem y cajón)
-i_faces = [0,0,4,4,0,0,1,1,0,0,3,3]
-j_faces = [1,2,5,6,3,7,2,6,1,5,2,6]
-k_faces = [2,3,6,7,7,4,6,5,5,4,6,7]
+    # Vars de asignación: assign[i][b] => bool
+    n = len(items)
+    assign = []
+    for i in range(n):
+        row = []
+        for b in range(max_bins):
+            row.append(model.NewBoolVar(f'assign_{i}_{b}'))
+        assign.append(row)
 
-for idx_b, b in enumerate(packer.bins, start=1):
-    if not b.items:
-        continue
+    # Vars de "bin usado": used[b] => bool
+    used = [model.NewBoolVar(f'used_{b}') for b in range(max_bins)]
 
-    fig = go.Figure()
+    # Vars de posición (x_i_b, y_i_b, z_i_b) => int
+    # Limitadas por el tamaño del bin
+    W, H, D = bin_dims
+    x = []
+    y = []
+    z = []
+    for i in range(n):
+        xrow, yrow, zrow = [], [], []
+        for b in range(max_bins):
+            # En mm
+            xv = model.NewIntVar(0, W, f'x_{i}_{b}')
+            yv = model.NewIntVar(0, H, f'y_{i}_{b}')
+            zv = model.NewIntVar(0, D, f'z_{i}_{b}')
+            xrow.append(xv)
+            yrow.append(yv)
+            zrow.append(zv)
+        x.append(xrow)
+        y.append(yrow)
+        z.append(zrow)
 
-    w = b.width   # X = width = largo
-    h = b.height  # Y = height = ancho
-    d = b.depth   # Z = depth = alto
+    # 1) Cada ítem en un bin
+    for i in range(n):
+        model.Add(sum(assign[i][b] for b in range(max_bins)) == 1)
 
-    X_cajon = [0,    w,    w,    0,    0,    w,    w,    0   ]
-    Y_cajon = [0,    0,    h,    h,    0,    0,    h,    h   ]
-    Z_cajon = [0,    0,    0,    0,    d,    d,    d,    d   ]
+    # 2) Si un item se asigna a un bin => ese bin está usado
+    for i in range(n):
+        for b in range(max_bins):
+            model.Add(assign[i][b] <= used[b])
 
-    fig.add_trace(go.Mesh3d(
-        x=X_cajon,
-        y=Y_cajon,
-        z=Z_cajon,
-        i=i_faces, j=j_faces, k=k_faces,
-        color='black',
-        opacity=0.95,
-        flatshading=True,
-        name=f'Cajón {idx_b}'
-    ))
+    # 3) No sobresalir
+    for i in range(n):
+        _, w_i, h_i, d_i, _ = items[i]
+        for b in range(max_bins):
+            # x_i + w_i <= W, etc.
+            model.Add(x[i][b] + int(w_i) <= W).OnlyEnforceIf(assign[i][b])
+            model.Add(y[i][b] + int(h_i) <= H).OnlyEnforceIf(assign[i][b])
+            model.Add(z[i][b] + int(d_i) <= D).OnlyEnforceIf(assign[i][b])
 
-    color_index = 0
+    # 4) No solapamiento (disyunción) => generará bastantes constraints
+    for i in range(n):
+        id_i, w_i, h_i, d_i, _ = items[i]
+        for j in range(i+1, n):
+            id_j, w_j, h_j, d_j, _ = items[j]
+            for b in range(max_bins):
+                # both_in_b => AND(assign[i][b], assign[j][b])
+                both_in_b = model.NewBoolVar(f'both_{i}_{j}_{b}')
+                model.AddBoolAnd([assign[i][b], assign[j][b]]).OnlyEnforceIf(both_in_b)
+                model.AddBoolOr([assign[i][b].Not(), assign[j][b].Not()]).OnlyEnforceIf(both_in_b.Not())
 
-    for it in b.items:
-        ix, iy, iz = it.position
-        iw, ih, id_ = it.width, it.height, it.depth
+                # now we create the disjunction => no_overlap_b
+                no_overlap_b = model.NewBoolVar(f'no_overlap_{i}_{j}_{b}')
 
-        X = [ix, ix+iw, ix+iw, ix, ix, ix+iw, ix+iw, ix]
-        Y = [iy, iy, iy+ih, iy+ih, iy, iy, iy+ih, iy+ih]
-        Z = [iz, iz, iz, iz, iz+id_, iz+id_, iz+id_, iz+id_]
+                # 6 condiciones: (x_i + w_i <= x_j) OR (x_j + w_j <= x_i)
+                #               (y_i + h_i <= y_j) OR (y_j + h_j <= y_i)
+                #               (z_i + d_i <= z_j) OR (z_j + d_j <= z_i)
+                conds = []
 
-        item_id = int(it.name.split('_')[1])
-        row_item = asignacion_cajas[asignacion_cajas['ITEM'] == item_id].iloc[0]
-        hover_text = (f"ITEM: {item_id}<br>"
-                      f"CODIGO: {row_item['CODIGO']}<br>"
-                      f"DESCRIPCION: {row_item['DESCRIPCION']}<br>"
-                      f"CANTIDAD: {row_item['CANTIDAD']}<br>"
-                      f"PESO: {row_item['PESO']:.2f} kg")
+                cond1 = model.NewBoolVar('')
+                model.Add( x[i][b] + int(w_i) <= x[j][b] ).OnlyEnforceIf(cond1)
+                conds.append(cond1)
 
-        fig.add_trace(go.Mesh3d(
-            x=X, y=Y, z=Z,
-            i=i_faces, j=j_faces, k=k_faces,
-            color=colors[color_index % len(colors)],
-            opacity=1,
-            flatshading=True,
-            name=f"Item {item_id}",
-            hovertext=hover_text,
-            hoverinfo='text'
-        ))
-        color_index += 1
+                cond2 = model.NewBoolVar('')
+                model.Add( x[j][b] + int(w_j) <= x[i][b] ).OnlyEnforceIf(cond2)
+                conds.append(cond2)
 
-    fig.update_layout(
-        scene=dict(
-            xaxis_title='X (mm) - LARGO',
-            yaxis_title='Y (mm) - ANCHO',
-            zaxis_title='Z (mm) - ALTO',
-            aspectmode='data'
-        ),
-        title=f'Representación 3D del Cajón {idx_b}'
+                cond3 = model.NewBoolVar('')
+                model.Add( y[i][b] + int(h_i) <= y[j][b] ).OnlyEnforceIf(cond3)
+                conds.append(cond3)
+
+                cond4 = model.NewBoolVar('')
+                model.Add( y[j][b] + int(h_j) <= y[i][b] ).OnlyEnforceIf(cond4)
+                conds.append(cond4)
+
+                cond5 = model.NewBoolVar('')
+                model.Add( z[i][b] + int(d_i) <= z[j][b] ).OnlyEnforceIf(cond5)
+                conds.append(cond5)
+
+                cond6 = model.NewBoolVar('')
+                model.Add( z[j][b] + int(d_j) <= z[i][b] ).OnlyEnforceIf(cond6)
+                conds.append(cond6)
+
+                # no_overlap_b => OR(conds)
+                model.AddBoolOr(conds).OnlyEnforceIf(no_overlap_b)
+                # Si both_in_b, => no_overlap_b
+                model.AddImplication(both_in_b, no_overlap_b)
+
+    # 5) Objetivo: Minimizar bins usados
+    model.Minimize(sum(used[b] for b in range(max_bins)))
+
+    # Resolver
+    solver = cp_model.CpSolver()
+    solver.parameters.max_time_in_seconds = 300  # 5 min, ajusta a gusto
+    status = solver.Solve(model)
+
+    if status == cp_model.OPTIMAL or status == cp_model.FEASIBLE:
+        print('Status:', solver.StatusName(status))
+        used_bins = 0
+        item_to_bin = {}
+        coords_solution = {}  # Para guardar (x,y,z)
+        for b in range(max_bins):
+            if solver.Value(used[b]) == 1:
+                used_bins += 1
+                # Recorremos items
+                for i in range(n):
+                    if solver.Value(assign[i][b]) == 1:
+                        item_id = items[i][0]
+                        item_to_bin[item_id] = b
+                        sol_x = solver.Value(x[i][b])
+                        sol_y = solver.Value(y[i][b])
+                        sol_z = solver.Value(z[i][b])
+                        coords_solution[item_id] = (sol_x, sol_y, sol_z)
+        print(f'Bins usados: {used_bins} de {max_bins}')
+        return item_to_bin, coords_solution, used_bins
+    else:
+        print("No se encontró solución factible.")
+        return None, None, None
+
+
+# ======================================
+# 3. PUNTO DE ENTRADA (MAIN)
+# ======================================
+
+if __name__ == "__main__":
+    # Rutas de archivos (ajusta a tu entorno):
+    archivo_packing_list = r'C:\Users\bghiberto\Documents\Bruno Ghiberto\IA EN LOGÍSTICA\3D_BIN_PACKING__OR-Tools\PACKING LIST.xlsx'
+    archivo_dimensiones  = r'C:\Users\bghiberto\Documents\Bruno Ghiberto\IA EN LOGÍSTICA\3D_BIN_PACKING__OR-Tools\DIMENSIONES CAJAS-NORMALIZADO.xlsx'
+    archivo_pesos        = r'C:\Users\bghiberto\Documents\Bruno Ghiberto\IA EN LOGÍSTICA\3D_BIN_PACKING__OR-Tools\PESO_P.T.xlsx'
+
+    # 1) Leemos dataframes
+    dim_cajas, caja_producto, tam_cajones, packing_list, pesos_productos = build_dataframes(
+        archivo_packing_list, 
+        archivo_dimensiones, 
+        archivo_pesos
     )
 
-    fig.write_html(f'cajones_3d/cajon_{idx_b}.html')
+    # 2) Creamos el DF asignacion_cajas (cada "paquete" a empacar)
+    asignacion_cajas = build_asignacion_cajas(
+        packing_list, 
+        caja_producto, 
+        dim_cajas, 
+        pesos_productos
+    )
 
-print("Visualizaciones 3D generadas en la carpeta cajones_3d.")
+    # 3) Supongamos que tenemos un único tipo de cajón => sacamos sus dimensiones (ej. "CODIGO"= X?)
+    #    Si en tu Excel "tam_cajones" tienes un cajón con CODIGO "CAJON_NORMAL", obtén su W,H,D
+    #    O si ya sabes que tus bins son 9 cajones con dim: 890 x 860 x 1040 mm:
+    bin_dims = (890, 860, 1040)
 
-# Verificación final de sobresalir
-for b in packer.bins:
-    for it in b.items:
-        ix, iy, iz = it.position
-        iw, ih, id_ = it.width, it.height, it.depth
-        if ix + iw > b.width or iy + ih > b.height or iz + id_ > b.depth:
-            print(f"El ítem {it.name} sobresale del cajón {b.name}")
+    # En tu caso real, se usaron 9 cajones
+    max_bins = 9
 
+    # 4) Llamamos al solver
+    item_to_bin, coords_solution, used_bins = solve_3d_bin_packing(
+        asignacion_cajas,
+        bin_dims,
+        max_bins
+    )
+
+    # 5) Si hay solución, podemos fusionarla de vuelta con asignacion_cajas
+    if item_to_bin is not None:
+        asignacion_cajas['BIN'] = asignacion_cajas['ITEM'].map(item_to_bin)
+        # Guardar posiciones (x,y,z) si lo necesitas
+        asignacion_cajas['POSICION'] = asignacion_cajas['ITEM'].map(coords_solution)
+        
+        asignacion_cajas.to_excel("asignacion_cajas_con_bins.xlsx", index=False)
+        print("Exportado asignacion_cajas_con_bins.xlsx")
 
