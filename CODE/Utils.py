@@ -7,9 +7,9 @@ def process_packing_list():
     # ======================================
     # 1. EJEMPLO DE LECTURA DE EXCEL
     # ======================================
-    archivo_packing_list = r'C:\Users\bghiberto\Documents\Bruno Ghiberto\IA EN LOGÍSTICA\3D-BPP\DATASETS\PACKING LIST-11.xlsx'
-    archivo_dimensiones = r'C:\Users\bghiberto\Documents\Bruno Ghiberto\IA EN LOGÍSTICA\3D-BPP\DATASETS\DIMENSIONES CAJAS-NORMALIZADO.xlsx'
-    archivo_pesos = r'C:\Users\bghiberto\Documents\Bruno Ghiberto\IA EN LOGÍSTICA\3D-BPP\DATASETS\PESO_P.T.xlsx'
+    archivo_packing_list = r'C:\Users\bghiberto\source\repos\3D_BIN_PACKING\DATASETS\PACKING LIST-11.xlsx'
+    archivo_dimensiones = r'C:\Users\bghiberto\source\repos\3D_BIN_PACKING\DATASETS\DIMENSIONES CAJAS-NORMALIZADO.xlsx'
+    archivo_pesos = r'C:\Users\bghiberto\source\repos\3D_BIN_PACKING\DATASETS\PESO_P.T.xlsx'
 
     dim_cajas = pd.read_excel(archivo_dimensiones, sheet_name='TAMAÑO-CAJAS')
     caja_producto = pd.read_excel(archivo_dimensiones, sheet_name='CAJA-PRODUCTO')
@@ -184,7 +184,7 @@ def process_packing_list():
     # ======================================
     # 6. EXPORTAR A CSV
     # ======================================
-    asignacion_cajas.to_excel(r"C:\Users\bghiberto\Documents\Bruno Ghiberto\IA EN LOGÍSTICA\3D-BPP\DATASETS\asignacion_cajas_final-_-.xlsx", index=False)
+    asignacion_cajas.to_excel(r"C:\Users\bghiberto\source\repos\3D_BIN_PACKING\DATASETS\asignacion_cajas_final-_-.xlsx", index=False)
     print("Archivo exportado: asignacion_cajas_final.csv")
     print(asignacion_cajas.head())
 

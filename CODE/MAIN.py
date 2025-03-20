@@ -24,7 +24,7 @@ def load_items_from_csv(csv_path):
 def main():
     Utils.process_packing_list()  # Generate asignacion_cajas_final.csv if needed
 
-    CSV_PATH = r"C:\Users\bghiberto\Documents\Bruno Ghiberto\IA EN LOGÍSTICA\3D-BPP\DATASETS\asignacion_cajas_final.csv"
+    CSV_PATH = r"C:\Users\bghiberto\source\repos\3D_BIN_PACKING\DATASETS\asignacion_cajas_final.csv"
     if not os.path.exists(CSV_PATH):
         raise FileNotFoundError(f"CSV file not found: {CSV_PATH}")
 
@@ -66,7 +66,7 @@ def main():
     df_merged.drop(columns=['ITEM'], inplace=True)
 
     # 4) Save the final merged data (with CAJA, DESCRIPCION, etc.)
-    output_csv = r"C:\Users\bghiberto\Documents\Bruno Ghiberto\IA EN LOGÍSTICA\3D-BPP\DATASETS\placements_result.csv"
+    output_csv = r"C:\Users\bghiberto\source\repos\3D_BIN_PACKING\DATASETS\placements_result.csv"
     df_merged.to_csv(output_csv, index=False)
     print(f"Saved merged placements to: {output_csv}")
 
@@ -74,7 +74,7 @@ def main():
     df_for_plot = pd.read_csv(output_csv)  # re-load the merged file
 
     plotter = HeuristicPlotter()
-    output_dir = r"C:\Users\bghiberto\Documents\Bruno Ghiberto\IA EN LOGÍSTICA\3D-BPP\DATASETS"
+    output_dir = r"C:\Users\bghiberto\source\repos\3D_BIN_PACKING\DATASETS"
     plotter.plot_all_bins(
         df_placements=df_for_plot,
         bin_length=BIN_LENGTH,
