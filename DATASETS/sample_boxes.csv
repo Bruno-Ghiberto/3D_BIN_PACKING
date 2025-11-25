@@ -1,0 +1,9 @@
+ITEM,W,H,L,CANTIDAD,CAJA,DESCRIPCION
+BOX001,200,150,100,3,TYPE_A,Small electronics box
+BOX002,300,200,150,2,TYPE_B,Medium product box
+BOX003,150,100,80,5,TYPE_A,Accessory box
+BOX004,400,250,200,1,TYPE_C,Large equipment box
+BOX005,180,120,90,4,TYPE_A,Component box
+BOX006,250,180,140,2,TYPE_B,Spare parts box
+BOX007,350,220,170,1,TYPE_C,Heavy machinery box
+BOX008,120,80,60,6,TYPE_A,Small parts box

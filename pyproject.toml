@@ -1,0 +1,104 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "bin-packer-3d"
+version = "0.1.0"
+description = "A 3D Bin Packing solver using heuristic algorithms with interactive visualization"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [
+    {name = "Bruno Ghiberto", email = "bruno.ghiberto@gmail.com"}
+]
+keywords = [
+    "bin-packing",
+    "3d-packing",
+    "optimization",
+    "heuristics",
+    "logistics",
+    "operations-research"
+]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Typing :: Typed",
+]
+
+dependencies = [
+    "pandas>=2.0.0",
+    "numpy>=1.24.0",
+    "plotly>=5.18.0",
+    "click>=8.1.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "openpyxl>=3.1.0",
+    "rich>=13.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-mock>=3.12.0",
+    "mypy>=1.8.0",
+    "ruff>=0.1.0",
+    "black>=24.0.0",
+    "pre-commit>=3.6.0",
+    "pandas-stubs>=2.0.0",
+]
+
+[project.scripts]
+bin-packer = "bin_packer_3d.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/Bruno-Ghiberto/3D_BIN_PACKING"
+Repository = "https://github.com/Bruno-Ghiberto/3D_BIN_PACKING"
+Issues = "https://github.com/Bruno-Ghiberto/3D_BIN_PACKING/issues"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/bin_packer_3d"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = ["-v", "--tb=short"]
+markers = [
+    "slow: marks tests as slow",
+    "integration: integration tests",
+]
+
+[tool.coverage.run]
+source = ["src/bin_packer_3d"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["plotly.*", "pandas.*", "numpy.*"]
+ignore_missing_imports = true
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+select = ["E", "W", "F", "I", "B", "C4", "UP"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310", "py311", "py312"]
