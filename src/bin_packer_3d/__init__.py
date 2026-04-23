@@ -27,8 +27,8 @@ from bin_packer_3d.models.bin import Bin
 from bin_packer_3d.models.placement import Placement, PlacementResult
 from bin_packer_3d.config import PackerConfig, VisualizationConfig, DataConfig, Settings
 
-__version__ = "0.1.0"
-__author__ = "Bruno"
+__version__ = "0.2.0.dev0"
+__author__ = "Bruno Ghiberto"
 
 __all__ = [
     "__version__",
