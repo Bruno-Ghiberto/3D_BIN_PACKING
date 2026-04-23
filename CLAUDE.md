@@ -13,5 +13,11 @@ Current SpecKit feature: [`specs/001-public-release-hardening/spec.md`](specs/00
 
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan
+shell commands, and other important information, read the current plan at
+[`specs/001-public-release-hardening/plan.md`](specs/001-public-release-hardening/plan.md)
+and its Phase 0/1 artefacts:
+[`research.md`](specs/001-public-release-hardening/research.md),
+[`data-model.md`](specs/001-public-release-hardening/data-model.md),
+[`quickstart.md`](specs/001-public-release-hardening/quickstart.md),
+[`contracts/`](specs/001-public-release-hardening/contracts/).
 <!-- SPECKIT END -->
