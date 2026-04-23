@@ -1,65 +1,40 @@
 <!--
-Sync Impact Report — Constitution v1.0.0 (Initial Ratification)
-===============================================================
+Sync Impact Report — Constitution v1.0.1 (PATCH amendment)
+===========================================================
 
-Version change: <none> → 1.0.0 (initial ratification)
+Version change: 1.0.0 → 1.0.1 (PATCH — tooling terminology refresh)
 
-Principles added (all 8):
-  I.    Contract Honesty (NON-NEGOTIABLE)
-  II.   Test-First Discipline (NON-NEGOTIABLE)
-  III.  Automated Quality Gates (NON-NEGOTIABLE)
-  IV.   Reproducibility & Determinism
-  V.    Library Citizenship
-  VI.   Documentation as Artefact (NON-NEGOTIABLE)
-  VII.  Privacy by Default
-  VIII. Performance Discipline
+Rationale for PATCH bump: `ruff format` (introduced in ruff ≥ 0.1) is the
+black-compatible formatter now used across the Python ecosystem. Removing
+`black` as a separate tool simplifies dependency management without
+altering the enforced style (line length 100, black-compatible layout).
+This is a tooling-name clarification, not a style-rule change — hence
+PATCH, not MINOR or MAJOR.
 
-Sections added:
-  - Technology Baseline & Non-Negotiables
-  - Development Workflow & Quality Gates
-  - Governance (with Supremacy, Amendment procedure, Versioning policy,
-    Compliance review, Runtime guidance file subsections)
+Principles added / removed / redefined: none.
 
-Principles removed / modified: none (first ratification)
+Sections modified:
+  - Principle III (Automated Quality Gates) — replaced `format check
+    (black)` with `format check (ruff format)`.
+  - §Technology Baseline & Non-Negotiables → Style — replaced
+    `ruff + black` with `ruff format` (line-length unchanged, still 100).
 
 Templates / dependent artefacts:
-  ⚠  .specify/templates/plan-template.md
-       "Constitution Check" section is a placeholder. Update to instantiate
-       the 8 principles as explicit pass/fail gates during the next
-       /speckit.plan run (spec-01's plan phase will exercise and finalise
-       this).
-  ✅ .specify/templates/spec-template.md
-       No direct constitution reference; existing structure compatible.
-       specs/001-public-release-hardening/spec.md already aligns.
-  ✅ .specify/templates/tasks-template.md
-       No direct constitution reference; existing phase structure
-       (Setup → Foundational → User Stories → Polish) compatible.
-       Principle-driven task types (test-first scaffolding, privacy audit,
-       benchmark reproducibility, ADR creation) are to be injected by
-       /speckit.tasks per-spec, not hard-coded in the template.
-  N/A .specify/templates/commands/
-       Directory does not exist in spec-kit 0.7.4; skills under
-       .claude/skills/speckit-*/ have replaced templated commands.
-  ⚠  CLAUDE.md (repository root)
-       Currently untracked. Should include a pointer to this constitution
-       as the authoritative rules source when first committed.
-  ⚠  README.md
-       Link from a "Project Policy" or "Contributing" section to
-       .specify/memory/constitution.md. Deferred until US3 (Public-Facing
-       Documentation) rewrites the README under spec-01.
-  ⚠  docs/adr/
-       Does not yet exist. Will be created during spec-01 implementation
-       per Principle VI.
+  ✅ specs/001-public-release-hardening/plan.md — already references
+     `ruff format --check`; now consistent with constitution.
+  ✅ specs/001-public-release-hardening/tasks.md — T008, T034 already use
+     ruff format; now consistent with constitution.
+  ✅ .pre-commit-config.yaml — T008 plans `ruff-format` hook only; aligned.
+  ✅ pyproject.toml — existing `[tool.black]` section to be removed in
+     Phase A (tracked under T001/T007).
 
-Deferred items / TODOs: none
-
-Consistent with:
-  - specs/001-public-release-hardening/spec.md (active spec)
-  - Speckit-context-prompts/spec-01-enhancing/01-specify.md
-  - Speckit-context-prompts/Context-Constitution.md (source context prompt)
+Previous Sync Impact Report — Constitution v1.0.0 (Initial Ratification):
+  - Principles added (all 8); sections added (Technology Baseline,
+    Development Workflow, Governance); consistent with spec-01 artefacts.
+  - Ratified 2026-04-22.
 
 Suggested commit message:
-  docs(constitution): ratify v1.0.0 with 8 principles and governance
+  docs(constitution)!: amend to v1.0.1 — replace black with ruff format
 -->
 
 # bin-packer-3d Constitution
@@ -119,9 +94,9 @@ tests cover end-to-end CLI flows. The pytest marker matrix
 
 Continuous Integration is the ground truth for "green". CI MUST run on
 every push to `main` and every pull request, executing: lint (ruff),
-format check (black), strict static type checking (`mypy --strict`), unit
-tests, integration tests, coverage measurement, and dependency
-vulnerability scanning. A pull request that fails any gate — or drops
+format check (`ruff format --check`), strict static type checking
+(`mypy --strict`), unit tests, integration tests, coverage measurement,
+and dependency vulnerability scanning. A pull request that fails any gate — or drops
 below 90 % line coverage on `src/bin_packer_3d/` — is blocked from merging.
 
 **Rationale**: Locally-passing claims are unverifiable. CI converts every
@@ -287,8 +262,9 @@ merge blocker.
 - **Type safety**: `mypy --strict` on `src/bin_packer_3d/` is a CI gate.
   New public symbols carry type hints. `# type: ignore` requires an
   adjacent comment explaining why.
-- **Style**: `ruff` + `black`, line length 100. No local style
-  exceptions.
+- **Style**: `ruff format` (black-compatible), line length 100. No local
+  style exceptions. The standalone `black` tool is no longer required
+  (amended in v1.0.1).
 - **Logging**: standard library `logging` only inside the library module;
   `loguru`, `structlog`, or custom frameworks are forbidden. The CLI may
   layer Rich on top for presentation.
@@ -478,4 +454,4 @@ for principles and adds only agent-specific operational notes. Any
 conflict between `CLAUDE.md` and this constitution is resolved in
 favour of the constitution.
 
-**Version**: 1.0.0 | **Ratified**: 2026-04-22 | **Last Amended**: 2026-04-22
+**Version**: 1.0.1 | **Ratified**: 2026-04-22 | **Last Amended**: 2026-04-23
