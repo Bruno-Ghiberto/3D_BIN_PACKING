@@ -25,6 +25,7 @@ from bin_packer_3d.config import DataConfig, PackerConfig, Settings, Visualizati
 from bin_packer_3d.models.bin import Bin
 from bin_packer_3d.models.box import Box
 from bin_packer_3d.models.placement import Placement, PlacementResult
+from bin_packer_3d.models.result import LoadReport, PackingResult, RejectedRow
 from bin_packer_3d.observability import StructuredAdapter, get_logger
 
 __version__ = "0.2.0.dev0"
@@ -46,6 +47,9 @@ __all__ = [
     "VisualizationConfig",
     "DataConfig",
     "Settings",
+    "PackingResult",
+    "LoadReport",
+    "RejectedRow",
     "get_logger",
     "StructuredAdapter",
 ]
