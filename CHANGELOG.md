@@ -11,6 +11,8 @@ as interpreted by the project constitution (see
 
 ### Added
 
+**Setup (T001..T009):**
+
 - Python 3.13 and 3.14 to the supported-version matrix.
 - `docs` optional-dependency extra: `mkdocs-material`, `mkdocstrings[python]`.
 - `hypothesis` and `pip-audit` added to the `dev` optional-dependency extra.
@@ -27,6 +29,55 @@ as interpreted by the project constitution (see
   `tests/`, `DATASETS/*.xlsx`, planning artefacts, and repository-internal
   directories — sdist and wheel now contain only library code and top-level
   metadata files.
+
+**Foundational (T010..T015):**
+
+- New module `bin_packer_3d.observability` with `get_logger(name)` (namespaced
+  under `bin_packer_3d` with an idempotent `NullHandler`) and
+  `StructuredAdapter` (lifts `extra['fields']` into LogRecord attributes)
+  per Constitution §V and ADR-0008 (FR-050).
+- New module `bin_packer_3d.models.result` with pydantic `PackingResult`,
+  pydantic `LoadReport`, and frozen-dataclass `RejectedRow` per
+  `data-model.md` §new entities. Coexists with the legacy `PlacementResult`
+  during the Phase A transition.
+- `PackerBase._check_constraints(placement, box, bin, existing_placements)`
+  hook consulted at every first-time placement-accept seam in `FFDPacker`
+  and `ShelfPacker`. Empty-list no-op until US7 T131 adds the
+  `constraints` field on `PackerConfig` — forward-compatible via
+  `getattr` fallback (FR-063).
+- Public re-exports on `bin_packer_3d.__init__`: `get_logger`,
+  `StructuredAdapter`, `PackingResult`, `LoadReport`, `RejectedRow`.
+- Regression guard `tests/unit/test_library_hygiene.py` — asserts
+  `import bin_packer_3d` attaches a `NullHandler` to the package logger
+  and does NOT touch the root logger, `logging.basicConfig`, `sys.path`,
+  or `cwd` (Constitution §V enforcement, FR-050).
+- Seeded `tests/unit/test_observability.py` — `get_logger` + `StructuredAdapter`
+  unit tests. Extended in US6 T110..T113.
+
+### Changed
+
+**Setup:**
+
+- **Python floor raised from `>=3.10` to `>=3.11`** (public) — matches
+  Constitution v1.0.1 §Technology Baseline and Spec FR-011. Maintainer
+  develops on Python 3.14.3; CI matrix covers 3.11 / 3.12 / 3.13 / 3.14.
+- `__author__` in `bin_packer_3d.__init__` aligned with `pyproject.toml`
+  `authors` — both now read `Bruno Ghiberto` (FR-034).
+- Project version bumped to `0.2.0.dev0` — Phase A development cycle.
+- `ruff` floor raised to `>=0.4.0` to support the `lint.` sub-table and
+  pydocstyle rules.
+
+**Foundational (drive-by baseline cleanup forced by pre-commit hooks):**
+
+- Renamed ambiguous loop variable `l` → `length` in `algorithms/base.py`
+  and `algorithms/ffd.py` (ruff E741).
+- Renamed unused loop variables `w, depth` → `_w, _depth` in
+  `algorithms/shelf.py` (ruff B007).
+- Added one-line docstrings to `__init__`, `__post_init__`, `__repr__`,
+  and `name` properties across `algorithms/base.py`, `ffd.py`, `shelf.py`
+  (ruff D102/D105/D107).
+- Fixed D212 docstring-summary-on-line-2 issue in `__init__.py`.
+- Normalized whitespace and import ordering across `algorithms/`.
 
 ### Changed
 
