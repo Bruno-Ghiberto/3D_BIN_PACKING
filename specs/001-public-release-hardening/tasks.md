@@ -61,12 +61,12 @@ user-story phase is **independently completable and testable** per the spec's
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete.
 
-- [ ] T010 [P] Write unit test for module-level logger convention in `tests/unit/test_library_hygiene.py`: assert `import bin_packer_3d` leaves root logger handlers empty, no `logging.basicConfig` side-effect, no `os.chdir`, no `sys.path` mutation (Principle V, FR-050)
-- [ ] T011 Create `src/bin_packer_3d/observability.py` with `get_logger(name: str) -> logging.Logger` returning namespaced logger with `NullHandler` attached (ADR-0008, FR-050); pure stdlib — no third-party deps
-- [ ] T012 [P] Write unit test for `PackingResult` invariants in `tests/unit/test_models.py`: box-count conservation (`len(placements) + len(unpacked_boxes) == len(input)`), volume conservation, empty-input edge case (spec §Edge Cases, FR-046)
-- [ ] T013 [P] Create `src/bin_packer_3d/models/result.py` with `PackingResult` and `LoadReport` pydantic models + `RejectedRow` frozen dataclass (data-model.md §new entities)
-- [ ] T014 [P] Extend `src/bin_packer_3d/algorithms/base.py` `BasePacker`: add `_check_constraints(placement, box, bin, placements) -> bool` helper that iterates `self.config.constraints` (returns `True` on empty list — no-op until US7 adds concrete constraints); every algorithm implementation calls this before accepting a placement
-- [ ] T015 [P] Extend `src/bin_packer_3d/__init__.py` public re-exports to include `PackingResult`, `LoadReport`, `get_logger` (contracts/api.md)
+- [x] T010 [P] Write unit test for module-level logger convention in `tests/unit/test_library_hygiene.py`: assert `import bin_packer_3d` leaves root logger handlers empty, no `logging.basicConfig` side-effect, no `os.chdir`, no `sys.path` mutation (Principle V, FR-050)
+- [x] T011 Create `src/bin_packer_3d/observability.py` with `get_logger(name: str) -> logging.Logger` returning namespaced logger with `NullHandler` attached (ADR-0008, FR-050); pure stdlib — no third-party deps
+- [x] T012 [P] Write unit test for `PackingResult` invariants in `tests/unit/test_models.py`: box-count conservation (`len(placements) + len(unpacked_boxes) == len(input)`), volume conservation, empty-input edge case (spec §Edge Cases, FR-046)
+- [x] T013 [P] Create `src/bin_packer_3d/models/result.py` with `PackingResult` and `LoadReport` pydantic models + `RejectedRow` frozen dataclass (data-model.md §new entities)
+- [x] T014 [P] Extend `src/bin_packer_3d/algorithms/base.py` `BasePacker`: add `_check_constraints(placement, box, bin, placements) -> bool` helper that iterates `self.config.constraints` (returns `True` on empty list — no-op until US7 adds concrete constraints); every algorithm implementation calls this before accepting a placement
+- [x] T015 [P] Extend `src/bin_packer_3d/__init__.py` public re-exports to include `PackingResult`, `LoadReport`, `get_logger` (contracts/api.md)
 
 **Checkpoint**: Foundation ready — user story implementation can now begin in parallel.
 
