@@ -41,15 +41,15 @@ user-story phase is **independently completable and testable** per the spec's
 
 **Purpose**: Project tooling that every subsequent story depends on.
 
-- [ ] T001 Bump Python floor in `pyproject.toml`: change `requires-python = ">=3.10"` to `requires-python = ">=3.11"`; update `[tool.mypy] python_version = "3.11"`; update `[tool.ruff] target-version = "py311"`; remove `3.10` from `classifiers`; add `3.13`, `3.14` to classifiers
-- [ ] T002 [P] Extend `pyproject.toml` `[project.optional-dependencies]` with `docs = ["mkdocs-material>=9.5", "mkdocstrings[python]>=0.25"]` and add `hypothesis>=6.100`, `pip-audit>=2.9` to `dev`
-- [ ] T003 [P] Align author fields: verify `authors` in `pyproject.toml` matches `__author__` in `src/bin_packer_3d/__init__.py` (FR-034)
-- [ ] T004 [P] Create `src/bin_packer_3d/py.typed` empty marker file (PEP 561, FR-035)
-- [ ] T005 [P] Update `pyproject.toml` `[tool.hatch.build.targets.wheel]` and create `MANIFEST.in` to include `src/bin_packer_3d/py.typed` in sdist; exclude `CODE/` from sdist
-- [ ] T006 [P] Create `.editorconfig` at repo root codifying UTF-8, LF, 4-space Python indent, 2-space YAML/JSON indent, final newline (FR-036)
-- [ ] T007 [P] Create `ruff.toml` (or extend `[tool.ruff]` in pyproject): enable `D` pydocstyle rules on `src/bin_packer_3d/`, ignore `D100`/`D104` in `tests/` (FR-026)
-- [ ] T008 [P] Update `.pre-commit-config.yaml`: add `ruff` (`check` + `format`), `trailing-whitespace`, `end-of-file-fixer`, `check-yaml`, `check-toml`, `check-added-large-files` hooks; mirror CI exactly (FR-013)
-- [ ] T009 [P] Create `CHANGELOG.md` at repo root following Keep-a-Changelog format with `## [Unreleased]` and `## [0.2.0]` sections (FR-023)
+- [x] T001 Bump Python floor in `pyproject.toml`: change `requires-python = ">=3.10"` to `requires-python = ">=3.11"`; update `[tool.mypy] python_version = "3.11"`; update `[tool.ruff] target-version = "py311"`; remove `3.10` from `classifiers`; add `3.13`, `3.14` to classifiers
+- [x] T002 [P] Extend `pyproject.toml` `[project.optional-dependencies]` with `docs = ["mkdocs-material>=9.5", "mkdocstrings[python]>=0.25"]` and add `hypothesis>=6.100`, `pip-audit>=2.9` to `dev`
+- [x] T003 [P] Align author fields: verify `authors` in `pyproject.toml` matches `__author__` in `src/bin_packer_3d/__init__.py` (FR-034)
+- [x] T004 [P] Create `src/bin_packer_3d/py.typed` empty marker file (PEP 561, FR-035)
+- [x] T005 [P] Update `pyproject.toml` `[tool.hatch.build.targets.wheel]` and create `MANIFEST.in` to include `src/bin_packer_3d/py.typed` in sdist; exclude `CODE/` from sdist
+- [x] T006 [P] Create `.editorconfig` at repo root codifying UTF-8, LF, 4-space Python indent, 2-space YAML/JSON indent, final newline (FR-036)
+- [x] T007 [P] Create `ruff.toml` (or extend `[tool.ruff]` in pyproject): enable `D` pydocstyle rules on `src/bin_packer_3d/`, ignore `D100`/`D104` in `tests/` (FR-026)
+- [x] T008 [P] Update `.pre-commit-config.yaml`: add `ruff` (`check` + `format`), `trailing-whitespace`, `end-of-file-fixer`, `check-yaml`, `check-toml`, `check-added-large-files` hooks; mirror CI exactly (FR-013)
+- [x] T009 [P] Create `CHANGELOG.md` at repo root following Keep-a-Changelog format with `## [Unreleased]` and `## [0.2.0]` sections (FR-023)
 
 **Checkpoint**: Tooling ready — every story below can rely on Python 3.11 / ruff / mypy / pre-commit / py.typed / editorconfig.
 
