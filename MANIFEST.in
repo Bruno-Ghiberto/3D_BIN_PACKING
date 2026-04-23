@@ -1,10 +1,25 @@
 include README.md
 include LICENSE
+include CHANGELOG.md
 include pyproject.toml
 include .env.example
 
 recursive-include src *.py
+recursive-include src py.typed
 recursive-include tests *.py
 
+prune legacy
+prune CODE
+prune benchmark
+prune docs
+prune DATASETS
+prune Speckit-context-prompts
+prune specs
+prune .specify
+prune .github
+prune .claude
+
+exclude LINKEDIN.txt
 global-exclude __pycache__
 global-exclude *.py[cod]
+global-exclude .DS_Store
