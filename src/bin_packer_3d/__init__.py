@@ -21,7 +21,9 @@ Example:
     >>> result = packer.pack(boxes)
 """
 
+from bin_packer_3d.algorithms import ALGORITHMS, get_strategies, register
 from bin_packer_3d.config import DataConfig, PackerConfig, Settings, VisualizationConfig
+from bin_packer_3d.data.loaders import ColumnMapping
 from bin_packer_3d.models.bin import Bin
 from bin_packer_3d.models.box import Box
 from bin_packer_3d.models.placement import Placement, PlacementResult
@@ -38,18 +40,22 @@ __author__ = "Bruno Ghiberto"
 get_logger("")
 
 __all__ = [
-    "__version__",
-    "Box",
+    "ALGORITHMS",
     "Bin",
+    "Box",
+    "ColumnMapping",
+    "DataConfig",
+    "LoadReport",
+    "PackerConfig",
+    "PackingResult",
     "Placement",
     "PlacementResult",
-    "PackerConfig",
-    "VisualizationConfig",
-    "DataConfig",
-    "Settings",
-    "PackingResult",
-    "LoadReport",
     "RejectedRow",
-    "get_logger",
+    "Settings",
     "StructuredAdapter",
+    "VisualizationConfig",
+    "__version__",
+    "get_logger",
+    "get_strategies",
+    "register",
 ]
