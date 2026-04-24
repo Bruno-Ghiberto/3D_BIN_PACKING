@@ -12,13 +12,13 @@ Usage:
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Literal
 
 import click
 from rich.console import Console
 from rich.table import Table
 
 from bin_packer_3d import __version__
+from bin_packer_3d.algorithms import ALGORITHMS
 from bin_packer_3d.config import PackerConfig, Settings
 
 console = Console()
@@ -44,9 +44,9 @@ def main(ctx: click.Context, debug: bool) -> None:
 @click.option(
     "--strategy",
     "-s",
-    type=click.Choice(["ffd", "shelf"]),
+    type=click.Choice(sorted(ALGORITHMS)),
     default="ffd",
-    help="Packing strategy to use",
+    help="Packing strategy to use (sourced from ALGORITHMS registry)",
 )
 @click.option(
     "--bin-length",
@@ -85,7 +85,7 @@ def main(ctx: click.Context, debug: bool) -> None:
 def pack(
     ctx: click.Context,
     input_file: Path,
-    strategy: Literal["ffd", "shelf"],
+    strategy: str,
     bin_length: float,
     bin_width: float,
     bin_height: float,
@@ -100,8 +100,6 @@ def pack(
     Example:
         bin-packer pack boxes.csv --strategy ffd --visualize
     """
-    from bin_packer_3d.algorithms.ffd import FirstFitDecreasingPacker
-    from bin_packer_3d.algorithms.shelf import ShelfPacker
     from bin_packer_3d.data.loaders import load_boxes_from_csv, save_placements_to_csv
     from bin_packer_3d.utils.metrics import calculate_metrics
     from bin_packer_3d.visualization.plotter import Plotter3D
@@ -143,11 +141,9 @@ def pack(
     console.print(f"  Width:  {bin_width} mm")
     console.print(f"  Height: {bin_height} mm\n")
 
-    # Select algorithm
-    if strategy == "ffd":
-        packer = FirstFitDecreasingPacker(config)
-    else:
-        packer = ShelfPacker(config)
+    # Select algorithm from the registry — no hardcoded branches.
+    packer_cls = ALGORITHMS[strategy]
+    packer = packer_cls(config)
 
     console.print(f"[yellow]Algorithm:[/yellow] {packer.name}\n")
 
@@ -198,20 +194,22 @@ def _display_metrics_table(metrics) -> None:
 
 @main.command()
 def info() -> None:
-    """Display information about available algorithms and configuration."""
+    """Display information about registered algorithms and default configuration.
+
+    The algorithm listing is sourced from the ALGORITHMS registry at
+    runtime; adding a new algorithm (i.e. decorating its class with
+    @register) extends this output automatically with no edit to
+    this command (FR-003, ADR-0001).
+    """
     console.print(f"\n[bold blue]3D Bin Packer v{__version__}[/bold blue]\n")
 
     table = Table(title="Available Algorithms")
     table.add_column("Strategy", style="cyan")
-    table.add_column("Name", style="green")
-    table.add_column("Description")
+    table.add_column("Complexity", style="yellow")
+    table.add_column("Description", style="green")
 
-    table.add_row(
-        "ffd", "First-Fit Decreasing", "Classic heuristic: sort by volume, place in first fit"
-    )
-    table.add_row(
-        "shelf", "Shelf-Based Packer", "2D shelf packing extended to 3D with guillotine cuts"
-    )
+    for name, cls in sorted(ALGORITHMS.items()):
+        table.add_row(name, cls.complexity, cls.description)
 
     console.print(table)
 

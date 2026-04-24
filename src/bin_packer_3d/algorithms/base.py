@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import time
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 if TYPE_CHECKING:
     from bin_packer_3d.config import PackerConfig
@@ -37,6 +37,9 @@ class PackerBase(ABC):
         ...         # Implementation here
         ...         pass
     """
+
+    complexity: ClassVar[str] = "unknown"
+    description: ClassVar[str] = "unknown"
 
     def __init__(self, config: PackerConfig) -> None:
         """Initialize packer with configuration.
