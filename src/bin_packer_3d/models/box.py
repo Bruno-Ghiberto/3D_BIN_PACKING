@@ -7,25 +7,28 @@ with support for 6 rotation orientations.
 from __future__ import annotations
 
 import itertools
+from collections.abc import Iterator
 from dataclasses import dataclass, field
-from typing import Iterator
 
 
 @dataclass
 class Box:
     """A rectangular box with dimensions and rotation support.
-    
+
     Attributes:
         id: Unique identifier for the box.
         width: Width dimension in mm (W).
         height: Height dimension in mm (H).
         length: Length dimension in mm (L).
-        weight: Weight in kg (optional).
+        weight: Weight in kg. ``None`` means "unknown" (e.g. the source
+            data did not include a weight column); ``0.0`` means
+            "known zero" (an explicit massless item). The two states
+            are distinguishable per FR-005.
         box_type: Type/category of box for grouping.
         description: Human-readable description.
         quantity: Number of this box type (for tracking).
         metadata: Additional arbitrary data.
-    
+
     Example:
         >>> box = Box(id="B001", width=100, height=50, length=80)
         >>> box.volume
@@ -38,20 +41,20 @@ class Box:
     width: float
     height: float
     length: float
-    weight: float = 0.0
+    weight: float | None = None
     box_type: str = ""
     description: str = ""
     quantity: int = 1
     metadata: dict[str, str | int | float] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
-        """Validate dimensions after initialization."""
+        """Validate dimensions and weight after initialization."""
         if self.width <= 0 or self.height <= 0 or self.length <= 0:
             raise ValueError(
                 f"All dimensions must be positive. Got: "
                 f"w={self.width}, h={self.height}, l={self.length}"
             )
-        if self.weight < 0:
+        if self.weight is not None and self.weight < 0:
             raise ValueError(f"Weight cannot be negative. Got: {self.weight}")
 
     @property
@@ -76,13 +79,13 @@ class Box:
 
     def orientations(self) -> Iterator[tuple[float, float, float]]:
         """Generate all 6 possible rotation orientations.
-        
+
         Each orientation is a (width, height, length) tuple representing
         the box dimensions when rotated to that position.
-        
+
         Yields:
             Tuples of (w, h, l) for each unique orientation.
-        
+
         Note:
             Duplicate orientations (for boxes with equal dimensions)
             are automatically filtered using set().
@@ -104,19 +107,19 @@ class Box:
         allow_rotation: bool = True,
     ) -> bool:
         """Check if box can fit in given container dimensions.
-        
+
         Args:
             container_w: Container width.
             container_h: Container height.
             container_l: Container length.
             allow_rotation: Whether to try all rotations.
-        
+
         Returns:
             True if box fits in any orientation (or fixed if no rotation).
         """
         if allow_rotation:
-            for w, h, l in self.orientations():
-                if w <= container_w and h <= container_h and l <= container_l:
+            for w, h, length in self.orientations():
+                if w <= container_w and h <= container_h and length <= container_l:
                     return True
             return False
         else:
@@ -127,6 +130,7 @@ class Box:
             )
 
     def __repr__(self) -> str:
+        """Return a concise debug representation including id and volume."""
         return (
             f"Box(id={self.id!r}, "
             f"w={self.width}, h={self.height}, l={self.length}, "
