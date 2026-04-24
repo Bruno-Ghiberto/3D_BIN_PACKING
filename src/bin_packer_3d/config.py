@@ -1,5 +1,4 @@
-"""
-Configuration management for bin_packer_3d.
+"""Configuration management for bin_packer_3d.
 
 Provides type-safe configuration using Pydantic models with support for
 environment variables, .env files, and programmatic configuration.
@@ -13,17 +12,22 @@ from typing import Literal
 from pydantic import BaseModel, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+from bin_packer_3d.algorithms import ALGORITHMS
+
 
 class PackerConfig(BaseModel):
     """Configuration for packing algorithms.
-    
+
     Attributes:
         bin_length: Length of the bin in mm (X-axis).
         bin_width: Width of the bin in mm (Y-axis).
         bin_height: Height of the bin in mm (Z-axis).
         allow_rotation: Whether to allow box rotation.
         max_weight: Maximum weight capacity per bin in kg.
-        strategy: Packing strategy to use.
+        strategy: Packing strategy — must be a key of
+            :data:`bin_packer_3d.algorithms.ALGORITHMS`. Unknown values
+            are rejected at construction time with an error listing the
+            registered names (FR-001, FR-047).
     """
 
     bin_length: float = Field(default=860.0, gt=0, description="Bin length in mm")
@@ -31,9 +35,23 @@ class PackerConfig(BaseModel):
     bin_height: float = Field(default=1040.0, gt=0, description="Bin height in mm")
     allow_rotation: bool = Field(default=True, description="Allow box rotation")
     max_weight: float | None = Field(default=None, gt=0, description="Max weight in kg")
-    strategy: Literal["ffd", "bfd", "shelf", "extreme_points"] = Field(
-        default="ffd", description="Packing strategy"
+    strategy: str = Field(
+        default="ffd",
+        description="Packing strategy — validated against the ALGORITHMS registry",
     )
+
+    @field_validator("strategy")
+    @classmethod
+    def _validate_strategy_registered(cls, v: str) -> str:
+        """Reject strategy values not present in ALGORITHMS (FR-001, FR-047)."""
+        if v not in ALGORITHMS:
+            raise ValueError(f"unknown strategy {v!r}. Registered: {sorted(ALGORITHMS)}")
+        return v
+
+    @classmethod
+    def get_strategies(cls) -> list[str]:
+        """Return the sorted list of registered strategy names (FR-002)."""
+        return sorted(ALGORITHMS)
 
     @property
     def bin_volume(self) -> float:
@@ -70,6 +88,7 @@ class DataConfig(BaseModel):
     @field_validator("output_dir", mode="before")
     @classmethod
     def ensure_path(cls, v: str | Path) -> Path:
+        """Coerce a ``str`` input into a :class:`pathlib.Path` instance."""
         return Path(v) if isinstance(v, str) else v
 
 
