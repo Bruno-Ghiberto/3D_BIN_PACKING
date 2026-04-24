@@ -54,6 +54,33 @@ as interpreted by the project constitution (see
 - Seeded `tests/unit/test_observability.py` — `get_logger` + `StructuredAdapter`
   unit tests. Extended in US6 T110..T113.
 
+**US4 Repository Hygiene (T075..T084):**
+
+- `tests/integration/test_hygiene.py` — forward-guard scanning every
+  tracked file under `src/`, `tests/`, `benchmark/` for Windows
+  drive-letter roots (``C:\``…) and POSIX home directories
+  (`/home/<user>/`) (FR-030, T075). Same file also guards author
+  alignment between `bin_packer_3d.__author__` and
+  `pyproject.toml` authors (FR-034, T084).
+- `tests/integration/test_datasets.py` — asserts `DATASETS/README.md`
+  exists and references every tracked `.csv`/`.xlsx` file by name
+  (FR-032, T076).
+- `DATASETS/AUDIT.md` — per-file privacy + hygiene audit of the
+  four CNH business `.xlsx` files plus historical artefacts
+  surfaced from git history. All cleared KEEP; no scrub required
+  (FR-033, Constitution §VII, T077).
+- `DATASETS/README.md` — documents `sample_boxes.csv` and every
+  retained `.xlsx` file (origin + schema + intended use) per
+  FR-032 (T080).
+- `legacy/README.md` — explains the preserved Alpha-era scripts
+  are historical reference only, not supported, and excluded
+  from wheel/sdist. The pre-move layout is recoverable via the
+  annotated git tag `legacy-code-preserved` (T081).
+- `scripts/audit_datasets.py` — release pre-publish gate that
+  scans working tree and git history for deny-pattern filenames,
+  exits non-zero on any match not in the maintained allow-list.
+  Called from `release.yml` in US8 (T083).
+
 **US1 Contract Integrity (T016..T030):**
 
 - `ALGORITHMS` dict registry, `@register(name)` decorator, and
@@ -115,6 +142,21 @@ as interpreted by the project constitution (see
   `report.rejected_rows` (structured) and `report.warnings` expose
   per-row failures (FR-053).
 
+**US4 (v0.2.0):**
+
+- `CODE/` directory relocated to `legacy/` via `git mv` (rename
+  tracking preserved). The 7 hardcoded Windows paths (FR-030
+  offenders) now live under `legacy/` — out of the T075
+  public-tree scan scope. Pre-move HEAD preserved as the
+  annotated git tag `legacy-code-preserved` (T081, FR-031,
+  SC-009).
+- `.pre-commit-config.yaml` gains a top-level `exclude: '^legacy/'`
+  so hooks (trailing-whitespace, ruff, ruff-format) no longer
+  touch preserved reference scripts.
+- `pyproject.toml` `[tool.ruff]` gains
+  `extend-exclude = ["legacy", "DATASETS"]` so local `ruff check`
+  runs match CI behaviour.
+
 **US1 (v0.2.0):**
 
 - `PackerConfig.strategy` type narrowed from
@@ -137,6 +179,18 @@ as interpreted by the project constitution (see
   than summing `None` into a float (spec §Edge Cases).
 
 ### Fixed
+
+**US4 Repository Hygiene:**
+
+- `CODE/*.py` with hardcoded `C:\Users\bghiberto\source\repos\…`
+  paths no longer sits at the repo root; moved to `legacy/` with
+  a clearly-marked README so visitors understand the directory
+  is preserved historical reference, not supported code (FR-031).
+- `scripts/audit_datasets.py` self-test on current repo finds 10
+  deny-pattern matches across working tree + history; all 10 are
+  in ALLOW → exit 0. Any new dataset landing in the repo without
+  a matching `AUDIT.md` entry + ALLOW update will fail this gate
+  at release time (FR-033).
 
 **US1 Contract Integrity:**
 
