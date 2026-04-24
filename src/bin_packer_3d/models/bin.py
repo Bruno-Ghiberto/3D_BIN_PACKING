@@ -104,16 +104,23 @@ class Bin:
         """Return number of boxes placed in this bin."""
         return len(self.placements)
 
-    def can_fit_weight(self, weight: float) -> bool:
+    def can_fit_weight(self, weight: float | None) -> bool:
         """Check if bin can accommodate additional weight.
 
         Args:
-            weight: Weight to add in kg.
+            weight: Weight to add in kg. ``None`` means "unknown
+                weight" — the check cannot be enforced and returns
+                ``True`` (consistent with FR-005 semantics introduced
+                in T025: unknown weights do not count against
+                capacity, distinct from a known ``0.0``).
 
         Returns:
-            True if weight fits or no weight limit is set.
+            True when the bin has no weight cap
+            (``max_weight is None``), OR the weight is unknown
+            (``weight is None``), OR the known weight plus
+            ``total_weight`` stays within ``max_weight``.
         """
-        if self.max_weight is None:
+        if self.max_weight is None or weight is None:
             return True
         return self.total_weight + weight <= self.max_weight
 
