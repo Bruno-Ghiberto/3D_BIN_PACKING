@@ -84,7 +84,34 @@ anonymisation pass. The hatch build excludes
 (`DATASETS/*.xlsx`) keep these out of wheel/sdist by default; they
 ship only via the repository itself for reference and benchmarking.
 
+---
+
+## Historical artefacts (git history only, not working tree)
+
+`scripts/audit_datasets.py` (T083) surfaced three additional
+file-paths in git history that match deny patterns. All are
+derivatives of the same CNH workflow covered above and inherit
+the same maintainer clearance. They are present as allow-list
+entries in the script with explanatory comments.
+
+| Historical path | Kind | Provenance |
+|---|---|---|
+| `PACKING LIST.xlsx` (repo root) | Input | Earlier commit location before move to `DATASETS/` — same content |
+| `DIMENSIONES CAJAS-NORMALIZADO.xlsx` (repo root) | Input | Same as above |
+| `PESO_P.T.xlsx` (repo root) | Input | Same as above |
+| `DATASETS/asignacion_cajas_final.csv` | Output | Computed by `CODE/MAIN.py` from the cleared inputs |
+| `DATASETS/asignacion_cajas_final-_-.xlsx` | Output | Same workflow, xlsx export |
+| `DATASETS/placements_result.csv` | Output | Packing-algorithm placements from the cleared inputs |
+
+These files are NOT in the current working tree — they are
+artefacts committed during early research and later removed. A
+`git filter-repo --invert-paths` scrub remains an option if the
+maintainer later decides repository-history cleanliness is worth
+the force-push churn; until then, the release gate treats them
+as allow-listed historical data.
+
 **Follow-up**: `scripts/audit_datasets.py` (T083) is configured with
-this file set as the allow-list. Any future `DATASETS/*.xlsx` addition
-that does not appear in the allow-list will fail the release-time
-gate until this `AUDIT.md` is updated.
+this file set as the allow-list. Any future `DATASETS/*.xlsx`
+addition — current or historical — that does not appear in the
+allow-list will fail the release-time gate until this `AUDIT.md`
+and the script's ``ALLOW`` set are both updated.
