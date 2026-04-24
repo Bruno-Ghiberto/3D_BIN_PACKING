@@ -133,6 +133,10 @@ ignore_missing_imports = true
 [tool.ruff]
 target-version = "py311"
 line-length = 100
+extend-exclude = [
+    "legacy",    # preserved Alpha-era scripts, intentionally un-linted (US4 T081)
+    "DATASETS",  # data files, no Python
+]
 
 [tool.ruff.lint]
 select = [

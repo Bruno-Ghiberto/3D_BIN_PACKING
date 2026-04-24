@@ -2,6 +2,9 @@
 # Run `pre-commit install` once per clone to activate the git hooks.
 # Run `pre-commit run --all-files` to execute the full suite locally.
 
+# legacy/ is preserved Alpha-era reference code; hooks must not touch it.
+exclude: '^legacy/'
+
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v5.0.0
