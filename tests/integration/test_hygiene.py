@@ -1,9 +1,12 @@
-"""Repository-hygiene guard — forbids hardcoded user-specific paths (T075).
+"""Repository-hygiene guards — path regex (T075) + author alignment (T084).
 
 Scans every tracked file under ``src/``, ``tests/``, and ``benchmark/``
 (the public-facing surface per FR-030) for two kinds of user-specific
 absolute paths: Windows drive-letter roots and POSIX home directories.
 See the ``_PATH_REGEX`` constant below for the exact pattern.
+
+Also verifies that ``bin_packer_3d.__author__`` and the
+``authors`` table in ``pyproject.toml`` remain in lockstep (FR-034).
 
 A match indicates someone hardcoded their development environment
 into a shipped artefact. The ``legacy/`` and ``DATASETS/``
@@ -66,4 +69,24 @@ def test_no_hardcoded_user_paths_in_public_tree() -> None:
         "Hardcoded user-specific paths found in the public tree. "
         "Move reproductions to legacy/ or rewrite with env vars / pathlib. "
         "Offenders:\n" + "\n".join(f"  {f}:{ln} — {txt!r}" for f, ln, txt in offenders)
+    )
+
+
+def test_author_alignment() -> None:
+    """bin_packer_3d.__author__ matches the single author in pyproject.toml (FR-034)."""
+    import tomllib
+
+    from bin_packer_3d import __author__
+
+    repo_root = Path(__file__).resolve().parents[2]
+    pyproject = tomllib.loads((repo_root / "pyproject.toml").read_text(encoding="utf-8"))
+    authors = pyproject["project"]["authors"]
+
+    assert len(authors) == 1, (
+        "Author alignment test assumes a single author; extend the assertion "
+        f"if the project gains co-authors. Got: {authors}"
+    )
+    assert authors[0]["name"] == __author__, (
+        f"FR-034 drift: pyproject.toml authors[0].name = {authors[0]['name']!r}, "
+        f"bin_packer_3d.__author__ = {__author__!r}. Update both to match."
     )
