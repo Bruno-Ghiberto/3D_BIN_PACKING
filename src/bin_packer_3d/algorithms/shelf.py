@@ -7,9 +7,10 @@ where items are placed on horizontal "shelves" within each bin.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from bin_packer_3d.algorithms.base import PackerBase
+from bin_packer_3d.algorithms.registry import register
 from bin_packer_3d.models.bin import Bin
 from bin_packer_3d.models.placement import Placement, PlacementResult
 
@@ -62,6 +63,7 @@ class Shelf:
             self.is_ceiling_locked = True
 
 
+@register("shelf")
 class ShelfPacker(PackerBase):
     """Shelf-based packing algorithm.
 
@@ -75,6 +77,9 @@ class ShelfPacker(PackerBase):
         Time: O(n * s * r) where s = shelves, r = rectangles per shelf
         Space: O(n + s * r)
     """
+
+    complexity: ClassVar[str] = "O(n log n)"
+    description: ClassVar[str] = "Shelf-based"
 
     def __init__(self, config: PackerConfig) -> None:
         """Initialise the shelf packer with the given configuration."""

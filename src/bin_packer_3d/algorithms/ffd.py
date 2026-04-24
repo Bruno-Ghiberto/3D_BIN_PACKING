@@ -6,9 +6,10 @@ sorted by volume and placed in the first bin that can accommodate them.
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from bin_packer_3d.algorithms.base import PackerBase
+from bin_packer_3d.algorithms.registry import register
 from bin_packer_3d.models.bin import Bin
 from bin_packer_3d.models.placement import Placement, PlacementResult
 
@@ -17,6 +18,7 @@ if TYPE_CHECKING:
     from bin_packer_3d.models.box import Box
 
 
+@register("ffd")
 class FirstFitDecreasingPacker(PackerBase):
     """First-Fit Decreasing packing algorithm.
 
@@ -36,6 +38,9 @@ class FirstFitDecreasingPacker(PackerBase):
         >>> result = packer.pack(boxes)
         >>> print(result.utilization_percent)
     """
+
+    complexity: ClassVar[str] = "O(n log n)"
+    description: ClassVar[str] = "First Fit Decreasing (volume)"
 
     def __init__(self, config: PackerConfig) -> None:
         """Initialise the FFD packer with the given configuration."""
