@@ -84,6 +84,21 @@ class TestBox:
         with pytest.raises(ValueError):
             Box(id="bad", width=0, height=50, length=80)
 
+    def test_weight_unknown_distinguishable(self) -> None:
+        """Box.weight None (unknown) is distinguishable from 0.0 (known zero) per FR-005 (T019)."""
+        unknown = Box(id="unknown", width=10, height=10, length=10, weight=None)
+        zero = Box(id="zero", width=10, height=10, length=10, weight=0.0)
+
+        assert unknown.weight is None
+        assert zero.weight == 0.0
+        assert unknown.weight != zero.weight
+
+    def test_weight_default_is_none(self) -> None:
+        """Box() with no explicit weight defaults to None (unknown), not 0.0 (FR-005, T019)."""
+        box = Box(id="default", width=10, height=10, length=10)
+
+        assert box.weight is None
+
 
 class TestBin:
     """Tests for Bin model."""
