@@ -1,9 +1,9 @@
-r"""Repository-hygiene guard — forbids hardcoded user-specific paths (T075).
+"""Repository-hygiene guard — forbids hardcoded user-specific paths (T075).
 
 Scans every tracked file under ``src/``, ``tests/``, and ``benchmark/``
-(the public-facing surface per FR-030) for patterns matching either
-a Windows drive letter prefix (``C:\``, ``D:\``, etc.) or a POSIX
-user directory (``/home/<username>/``).
+(the public-facing surface per FR-030) for two kinds of user-specific
+absolute paths: Windows drive-letter roots and POSIX home directories.
+See the ``_PATH_REGEX`` constant below for the exact pattern.
 
 A match indicates someone hardcoded their development environment
 into a shipped artefact. The ``legacy/`` and ``DATASETS/``
@@ -16,6 +16,10 @@ the test passes without asserting red-first behaviour; detection
 logic was empirically verified against the pre-move ``CODE/``
 directory (7 hits) at authorship time — see the commit body for
 evidence.
+
+Note: this module avoids writing the literal patterns it scans for
+anywhere except inside the compiled regex, so the test never matches
+its own source.
 
 Exercises: FR-030.
 """
