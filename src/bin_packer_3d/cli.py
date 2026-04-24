@@ -30,7 +30,7 @@ console = Console()
 @click.pass_context
 def main(ctx: click.Context, debug: bool) -> None:
     """3D Bin Packing solver with multiple algorithms and visualization.
-    
+
     A professional tool for solving the 3D Bin Packing Problem (3D-BPP)
     using heuristic algorithms with interactive 3D visualization.
     """
@@ -42,31 +42,36 @@ def main(ctx: click.Context, debug: bool) -> None:
 @main.command()
 @click.argument("input_file", type=click.Path(exists=True, path_type=Path))
 @click.option(
-    "--strategy", "-s",
+    "--strategy",
+    "-s",
     type=click.Choice(["ffd", "shelf"]),
     default="ffd",
     help="Packing strategy to use",
 )
 @click.option(
-    "--bin-length", "-l",
+    "--bin-length",
+    "-l",
     type=float,
     default=860.0,
     help="Bin length in mm",
 )
 @click.option(
-    "--bin-width", "-w",
+    "--bin-width",
+    "-w",
     type=float,
     default=890.0,
     help="Bin width in mm",
 )
 @click.option(
-    "--bin-height", "-h",
+    "--bin-height",
+    "-h",
     type=float,
     default=1040.0,
     help="Bin height in mm",
 )
 @click.option(
-    "--output-dir", "-o",
+    "--output-dir",
+    "-o",
     type=click.Path(path_type=Path),
     default=Path("output"),
     help="Output directory for results",
@@ -88,35 +93,43 @@ def pack(
     visualize: bool,
 ) -> None:
     """Pack boxes from INPUT_FILE into bins.
-    
+
     Reads box dimensions from CSV/Excel and applies the selected packing
     algorithm. Outputs placement results and optional 3D visualizations.
-    
+
     Example:
         bin-packer pack boxes.csv --strategy ffd --visualize
     """
-    from bin_packer_3d.data.loaders import load_boxes_from_csv, save_placements_to_csv
     from bin_packer_3d.algorithms.ffd import FirstFitDecreasingPacker
     from bin_packer_3d.algorithms.shelf import ShelfPacker
-    from bin_packer_3d.visualization.plotter import Plotter3D
+    from bin_packer_3d.data.loaders import load_boxes_from_csv, save_placements_to_csv
     from bin_packer_3d.utils.metrics import calculate_metrics
-    
+    from bin_packer_3d.visualization.plotter import Plotter3D
+
+    settings: Settings = ctx.obj["settings"]
+
     console.print(f"\n[bold blue]3D Bin Packer v{__version__}[/bold blue]\n")
-    
+
     # Load boxes
     console.print(f"[yellow]Loading boxes from:[/yellow] {input_file}")
-    
+
     suffix = input_file.suffix.lower()
     if suffix == ".csv":
-        boxes = load_boxes_from_csv(input_file)
+        report = load_boxes_from_csv(input_file, config=settings.data)
     elif suffix in (".xlsx", ".xls"):
         from bin_packer_3d.data.loaders import load_boxes_from_excel
-        boxes = load_boxes_from_excel(input_file)
+
+        report = load_boxes_from_excel(input_file, config=settings.data)
     else:
         raise click.ClickException(f"Unsupported file format: {suffix}")
-    
+
+    boxes = report.boxes
+    if report.rejected_rows:
+        console.print(
+            f"[yellow]Warning: {len(report.rejected_rows)} row(s) rejected during load[/yellow]"
+        )
     console.print(f"[green]Loaded {len(boxes)} boxes[/green]\n")
-    
+
     # Configure packer
     config = PackerConfig(
         bin_length=bin_length,
@@ -124,54 +137,54 @@ def pack(
         bin_height=bin_height,
         strategy=strategy,
     )
-    
+
     console.print("[yellow]Bin dimensions:[/yellow]")
     console.print(f"  Length: {bin_length} mm")
     console.print(f"  Width:  {bin_width} mm")
     console.print(f"  Height: {bin_height} mm\n")
-    
+
     # Select algorithm
     if strategy == "ffd":
         packer = FirstFitDecreasingPacker(config)
     else:
         packer = ShelfPacker(config)
-    
+
     console.print(f"[yellow]Algorithm:[/yellow] {packer.name}\n")
-    
+
     # Pack
     with console.status("[bold green]Packing boxes..."):
         result = packer.pack(boxes)
-    
+
     # Calculate and display metrics
     metrics = calculate_metrics(result)
-    
+
     console.print("\n[bold green]Results:[/bold green]")
     _display_metrics_table(metrics)
-    
+
     # Save results
     output_dir.mkdir(parents=True, exist_ok=True)
-    
+
     csv_path = output_dir / "placements.csv"
     save_placements_to_csv(result, csv_path)
     console.print(f"\n[green]Saved placements to:[/green] {csv_path}")
-    
+
     # Generate visualizations
     if visualize and result.bins:
         console.print("\n[yellow]Generating visualizations...[/yellow]")
         plotter = Plotter3D()
         files = plotter.plot_result(result, output_dir)
         console.print(f"[green]Created {len(files)} visualization files[/green]")
-    
+
     console.print("\n[bold green]Done![/bold green]\n")
 
 
 def _display_metrics_table(metrics) -> None:
     """Display metrics in a formatted table."""
     table = Table(title="Packing Metrics")
-    
+
     table.add_column("Metric", style="cyan")
     table.add_column("Value", style="green")
-    
+
     table.add_row("Algorithm", metrics.algorithm)
     table.add_row("Boxes Placed", f"{metrics.placed_boxes}/{metrics.total_boxes}")
     table.add_row("Success Rate", f"{metrics.success_rate:.1f}%")
@@ -179,7 +192,7 @@ def _display_metrics_table(metrics) -> None:
     table.add_row("Overall Utilization", f"{metrics.utilization_percent:.1f}%")
     table.add_row("Avg Bin Utilization", f"{metrics.avg_bin_utilization:.1f}%")
     table.add_row("Time", f"{metrics.elapsed_time_ms:.2f}ms")
-    
+
     console.print(table)
 
 
@@ -187,42 +200,41 @@ def _display_metrics_table(metrics) -> None:
 def info() -> None:
     """Display information about available algorithms and configuration."""
     console.print(f"\n[bold blue]3D Bin Packer v{__version__}[/bold blue]\n")
-    
+
     table = Table(title="Available Algorithms")
     table.add_column("Strategy", style="cyan")
     table.add_column("Name", style="green")
     table.add_column("Description")
-    
+
     table.add_row(
-        "ffd",
-        "First-Fit Decreasing",
-        "Classic heuristic: sort by volume, place in first fit"
+        "ffd", "First-Fit Decreasing", "Classic heuristic: sort by volume, place in first fit"
     )
     table.add_row(
-        "shelf",
-        "Shelf-Based Packer",
-        "2D shelf packing extended to 3D with guillotine cuts"
+        "shelf", "Shelf-Based Packer", "2D shelf packing extended to 3D with guillotine cuts"
     )
-    
+
     console.print(table)
-    
+
     console.print("\n[bold]Default Configuration:[/bold]")
     settings = Settings()
-    console.print(f"  Bin dimensions: {settings.packer.bin_length} x "
-                  f"{settings.packer.bin_width} x {settings.packer.bin_height} mm")
+    console.print(
+        f"  Bin dimensions: {settings.packer.bin_length} x "
+        f"{settings.packer.bin_width} x {settings.packer.bin_height} mm"
+    )
     console.print(f"  Allow rotation: {settings.packer.allow_rotation}")
 
 
 @main.command()
 @click.option(
-    "--output", "-o",
+    "--output",
+    "-o",
     type=click.Path(path_type=Path),
     default=Path(".env"),
     help="Output path for configuration file",
 )
 def init(output: Path) -> None:
     """Initialize a configuration file with default settings."""
-    content = '''# 3D Bin Packer Configuration
+    content = """# 3D Bin Packer Configuration
 # Uncomment and modify values as needed
 
 # Bin dimensions (mm)
@@ -248,8 +260,8 @@ def init(output: Path) -> None:
 
 # Debug mode
 # BIN_PACKER_DEBUG=false
-'''
-    
+"""
+
     output.write_text(content)
     console.print(f"[green]Created configuration file:[/green] {output}")
     console.print("\nEdit this file to customize settings.")

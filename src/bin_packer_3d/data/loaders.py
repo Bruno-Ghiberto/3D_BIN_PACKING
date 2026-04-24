@@ -19,11 +19,16 @@ from typing import TYPE_CHECKING
 
 import pandas as pd
 
-from bin_packer_3d.config import DataConfig, default_settings
+from bin_packer_3d.config import DataConfig
 from bin_packer_3d.models.box import Box
+from bin_packer_3d.models.result import LoadReport, RejectedRow
+from bin_packer_3d.observability import get_logger
 
 if TYPE_CHECKING:
     from bin_packer_3d.models.placement import PlacementResult
+
+
+_logger = get_logger("data.loaders")
 
 
 @dataclass
@@ -70,7 +75,7 @@ def load_boxes_from_csv(
     file_path: Path | str,
     mapping: ColumnMapping | None = None,
     config: DataConfig | None = None,
-) -> list[Box]:
+) -> LoadReport:
     """Load boxes from a CSV file.
 
     Args:
@@ -83,18 +88,18 @@ def load_boxes_from_csv(
             Retained for callers that pre-date ColumnMapping.
 
     Returns:
-        List of :class:`Box` objects successfully parsed from the file.
+        :class:`LoadReport` carrying successfully parsed
+        :class:`Box` objects, structured :class:`RejectedRow` records
+        for every row that failed to parse, and human-readable
+        ``warnings`` mirroring the rejection log (FR-053).
 
     Example:
-        >>> boxes = load_boxes_from_csv("data.csv")
-        >>> print(f"Loaded {len(boxes)} boxes")
+        >>> report = load_boxes_from_csv("data.csv")
+        >>> print(f"Loaded {len(report.boxes)} boxes; rejected {len(report.rejected_rows)}")
     """
-    effective_config = config if config is not None else default_settings.data
-    effective_mapping = mapping if mapping is not None else _mapping_from_config(effective_config)
+    effective_mapping, quantity_column = _resolve_mapping(mapping, config)
     df = pd.read_csv(file_path)
-    return _dataframe_to_boxes(
-        df, effective_mapping, quantity_column=effective_config.quantity_column
-    )
+    return _dataframe_to_report(df, effective_mapping, quantity_column=quantity_column)
 
 
 def load_boxes_from_excel(
@@ -102,7 +107,7 @@ def load_boxes_from_excel(
     sheet_name: str | int = 0,
     mapping: ColumnMapping | None = None,
     config: DataConfig | None = None,
-) -> list[Box]:
+) -> LoadReport:
     """Load boxes from an Excel file.
 
     Args:
@@ -112,31 +117,59 @@ def load_boxes_from_excel(
         config: Legacy :class:`DataConfig`; see :func:`load_boxes_from_csv`.
 
     Returns:
-        List of :class:`Box` objects successfully parsed from the file.
+        :class:`LoadReport`; see :func:`load_boxes_from_csv`.
     """
-    effective_config = config if config is not None else default_settings.data
-    effective_mapping = mapping if mapping is not None else _mapping_from_config(effective_config)
+    effective_mapping, quantity_column = _resolve_mapping(mapping, config)
     df = pd.read_excel(file_path, sheet_name=sheet_name)
-    return _dataframe_to_boxes(
-        df, effective_mapping, quantity_column=effective_config.quantity_column
-    )
+    return _dataframe_to_report(df, effective_mapping, quantity_column=quantity_column)
 
 
-def _dataframe_to_boxes(
+def _resolve_mapping(
+    mapping: ColumnMapping | None,
+    config: DataConfig | None,
+) -> tuple[ColumnMapping, str]:
+    """Resolve the effective mapping and quantity-column for a loader call.
+
+    Precedence:
+    1. Explicit ``mapping`` wins.
+    2. Else, if ``config`` is explicitly provided, derive from it
+       (pre-0.2 backcompat).
+    3. Else, :class:`ColumnMapping` defaults — the new canonical API.
+
+    Also returns the quantity column name sourced from ``config`` when
+    supplied, otherwise the historical default ``"CANTIDAD"`` so
+    quantity-expansion behaviour survives without coupling to
+    ``DataConfig`` in the default path.
+    """
+    if mapping is not None:
+        effective_mapping = mapping
+    elif config is not None:
+        effective_mapping = _mapping_from_config(config)
+    else:
+        effective_mapping = ColumnMapping()
+    quantity_column = config.quantity_column if config is not None else "CANTIDAD"
+    return effective_mapping, quantity_column
+
+
+def _dataframe_to_report(
     df: pd.DataFrame,
     mapping: ColumnMapping,
     quantity_column: str = "CANTIDAD",
-) -> list[Box]:
-    """Convert DataFrame rows to ``Box`` objects using the given mapping.
+) -> LoadReport:
+    """Convert a DataFrame to a :class:`LoadReport` using ``mapping``.
 
     Required columns (``mapping.length/width/height``) raise KeyError
-    per row when missing — surfacing as a skipped row in the log. All
-    optional columns are pre-checked with ``in row.index`` so their
-    absence never triggers KeyError.
+    per row when missing — the row is recorded as a
+    :class:`RejectedRow` and a ``logging.WARNING`` is emitted via the
+    ``bin_packer_3d.data.loaders`` namespaced logger (FR-053,
+    Constitution §I + §V). Optional columns are pre-checked with
+    ``in row.index`` so their absence never triggers KeyError.
     """
     df.columns = df.columns.str.strip()
 
     boxes: list[Box] = []
+    rejected_rows: list[RejectedRow] = []
+    warnings: list[str] = []
 
     for idx, row in df.iterrows():
         row_number = int(idx) + 1 if isinstance(idx, int) else 0
@@ -187,11 +220,21 @@ def _dataframe_to_boxes(
                 )
                 boxes.append(box)
 
-        except (KeyError, ValueError) as e:
-            print(f"Warning: Skipping row {row_number} due to error: {e}")
+        except (KeyError, ValueError) as exc:
+            reason = "missing_column" if isinstance(exc, KeyError) else "invalid_value"
+            rejected_rows.append(
+                RejectedRow(
+                    row_number=row_number,
+                    reason=reason,
+                    raw={str(k): v for k, v in row.to_dict().items()},
+                )
+            )
+            message = f"row {row_number} rejected ({reason}): {exc}"
+            warnings.append(message)
+            _logger.warning(message)
             continue
 
-    return boxes
+    return LoadReport(boxes=boxes, rejected_rows=rejected_rows, warnings=warnings)
 
 
 def save_placements_to_csv(
