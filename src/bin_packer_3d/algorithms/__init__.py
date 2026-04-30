@@ -12,12 +12,14 @@ package import.
 """
 
 from bin_packer_3d.algorithms.base import PackerBase
+from bin_packer_3d.algorithms.bfd import BestFitDecreasingPacker
 from bin_packer_3d.algorithms.ffd import FirstFitDecreasingPacker
 from bin_packer_3d.algorithms.registry import ALGORITHMS, get_strategies, register
 from bin_packer_3d.algorithms.shelf import ShelfPacker
 
 __all__ = [
     "ALGORITHMS",
+    "BestFitDecreasingPacker",
     "FirstFitDecreasingPacker",
     "PackerBase",
     "ShelfPacker",
