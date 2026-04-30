@@ -64,7 +64,7 @@ def test_library_import_does_not_touch_root_logger() -> None:
         check=False,
     )
     assert result.returncode == 0, (
-        f"Subprocess check failed (stdout={result.stdout!r}, " f"stderr={result.stderr!r})"
+        f"Subprocess check failed (stdout={result.stdout!r}, stderr={result.stderr!r})"
     )
 
 
@@ -99,7 +99,7 @@ def test_library_import_does_not_mutate_syspath_or_cwd() -> None:
         check=False,
     )
     assert result.returncode == 0, (
-        f"Subprocess check failed (stdout={result.stdout!r}, " f"stderr={result.stderr!r})"
+        f"Subprocess check failed (stdout={result.stdout!r}, stderr={result.stderr!r})"
     )
 
 
@@ -133,5 +133,5 @@ def test_no_logging_basicConfig_called_on_import() -> None:
         check=False,
     )
     assert result.returncode == 0, (
-        f"Subprocess check failed (stdout={result.stdout!r}, " f"stderr={result.stderr!r})"
+        f"Subprocess check failed (stdout={result.stdout!r}, stderr={result.stderr!r})"
     )

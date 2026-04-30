@@ -134,10 +134,13 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e ".[dev]"
       - name: pip-audit
-        # Audits the resolved environment. T048 layers in a requirements.txt
-        # workflow once pip-tools is wired up; for the bootstrap we audit the
-        # editable install directly — equivalent coverage, fewer moving parts.
-        run: pip-audit --strict
+        # Audits the resolved environment. `--skip-editable` excludes our
+        # own package (`bin-packer-3d` is not on PyPI yet — T141 in US8
+        # reserves the name); pip-audit only checks third-party deps. T048
+        # layers in a requirements.txt workflow once pip-tools is wired up;
+        # for the bootstrap we audit the editable install directly —
+        # equivalent coverage, fewer moving parts.
+        run: pip-audit --strict --skip-editable
 
   pre-commit-parity:
     name: Pre-commit (run --all-files)

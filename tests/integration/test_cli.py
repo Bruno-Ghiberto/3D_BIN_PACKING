@@ -26,9 +26,9 @@ class TestInfoCommand:
 
         for name, cls in ALGORITHMS.items():
             assert name in output, f"registered strategy {name!r} missing from info output"
-            assert (
-                cls.complexity in output
-            ), f"complexity for {name!r} missing from info output; expected {cls.complexity!r}"
-            assert (
-                cls.description in output
-            ), f"description for {name!r} missing from info output; expected {cls.description!r}"
+            assert cls.complexity in output, (
+                f"complexity for {name!r} missing from info output; expected {cls.complexity!r}"
+            )
+            assert cls.description in output, (
+                f"description for {name!r} missing from info output; expected {cls.description!r}"
+            )

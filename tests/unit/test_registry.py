@@ -51,6 +51,6 @@ class TestAlgorithmRegistry:
 
         msg = str(exc_info.value)
         for registered in ALGORITHMS:
-            assert (
-                registered in msg
-            ), f"error message must list registered strategy {registered!r}; got: {msg}"
+            assert registered in msg, (
+                f"error message must list registered strategy {registered!r}; got: {msg}"
+            )

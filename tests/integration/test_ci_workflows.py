@@ -48,13 +48,13 @@ def test_workflow_exists_parses_and_is_named(workflow_name: str) -> None:
     with path.open("r", encoding="utf-8") as handle:
         data = yaml.safe_load(handle)
 
-    assert isinstance(
-        data, dict
-    ), f".github/workflows/{workflow_name}: top-level YAML must be a mapping"
+    assert isinstance(data, dict), (
+        f".github/workflows/{workflow_name}: top-level YAML must be a mapping"
+    )
 
     assert "name" in data, f".github/workflows/{workflow_name}: missing top-level `name:` field"
 
     name_value = data["name"]
-    assert (
-        isinstance(name_value, str) and name_value.strip()
-    ), f".github/workflows/{workflow_name}: `name:` must be a non-empty string"
+    assert isinstance(name_value, str) and name_value.strip(), (
+        f".github/workflows/{workflow_name}: `name:` must be a non-empty string"
+    )

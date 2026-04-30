@@ -300,9 +300,9 @@ class TestPackingResult:
         total_input_volume = sum(b.volume for b in boxes)
         total_placed_volume = sum(p.box.volume for p in result.placements)
         total_unpacked_volume = sum(b.volume for b in result.unpacked_boxes)
-        assert total_placed_volume + total_unpacked_volume == pytest.approx(
-            total_input_volume
-        ), "volume conservation violated"
+        assert total_placed_volume + total_unpacked_volume == pytest.approx(total_input_volume), (
+            "volume conservation violated"
+        )
 
     def test_bins_used_must_be_non_negative(self) -> None:
         """Pydantic validator rejects bins_used < 0."""

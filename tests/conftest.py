@@ -2,9 +2,9 @@
 
 import pytest
 
-from bin_packer_3d.models.box import Box
-from bin_packer_3d.models.bin import Bin
 from bin_packer_3d.config import PackerConfig
+from bin_packer_3d.models.bin import Bin
+from bin_packer_3d.models.box import Box
 
 
 @pytest.fixture

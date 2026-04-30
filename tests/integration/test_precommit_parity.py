@@ -70,17 +70,17 @@ def test_ci_runs_pre_commit_parity() -> None:
     jobs = workflow.get("jobs")
     assert isinstance(jobs, dict) and jobs, "_ci-core.yml declares no jobs"
 
-    assert (
-        "pre-commit-parity" in jobs
-    ), "_ci-core.yml must declare a `pre-commit-parity` job (FR-013)"
+    assert "pre-commit-parity" in jobs, (
+        "_ci-core.yml must declare a `pre-commit-parity` job (FR-013)"
+    )
 
     parity_job = jobs["pre-commit-parity"]
     assert isinstance(parity_job, dict), "`pre-commit-parity` job must be a mapping"
 
     steps = parity_job.get("steps", [])
-    assert (
-        isinstance(steps, list) and steps
-    ), "`pre-commit-parity` job must declare at least one step"
+    assert isinstance(steps, list) and steps, (
+        "`pre-commit-parity` job must declare at least one step"
+    )
 
     run_commands: list[str] = []
     for step in steps:

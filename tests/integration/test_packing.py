@@ -1,14 +1,12 @@
 """Integration tests for complete packing workflow."""
 
 import pytest
-from pathlib import Path
-import tempfile
 
-from bin_packer_3d.models.box import Box
-from bin_packer_3d.config import PackerConfig
 from bin_packer_3d.algorithms.ffd import FirstFitDecreasingPacker
-from bin_packer_3d.visualization.plotter import Plotter3D
+from bin_packer_3d.config import PackerConfig
+from bin_packer_3d.models.box import Box
 from bin_packer_3d.utils.metrics import calculate_metrics
+from bin_packer_3d.visualization.plotter import Plotter3D
 
 
 class TestPackingWorkflow:
@@ -19,37 +17,40 @@ class TestPackingWorkflow:
         # Pack
         packer = FirstFitDecreasingPacker(default_config)
         result = packer.pack(sample_boxes)
-        
+
         # Calculate metrics
         metrics = calculate_metrics(result)
-        
+
         assert metrics.placed_boxes == len(sample_boxes)
         assert metrics.success_rate == 100.0
         assert metrics.utilization_percent > 0
-        
+
         # Visualization (don't actually create files in test)
         plotter = Plotter3D()
         for bin_obj in result.bins:
             fig = plotter.plot_bin(bin_obj, title="Test")
             assert fig is not None
 
-    def test_no_overlapping_placements(self, default_config: PackerConfig, sample_boxes: list[Box]) -> None:
+    def test_no_overlapping_placements(
+        self, default_config: PackerConfig, sample_boxes: list[Box]
+    ) -> None:
         """Test that placements don't overlap."""
         packer = FirstFitDecreasingPacker(default_config)
         result = packer.pack(sample_boxes)
-        
+
         for bin_obj in result.bins:
             placements = bin_obj.placements
             for i, p1 in enumerate(placements):
-                for p2 in placements[i+1:]:
-                    assert not p1.overlaps_with(p2), \
-                        f"Overlap detected: {p1} and {p2}"
+                for p2 in placements[i + 1 :]:
+                    assert not p1.overlaps_with(p2), f"Overlap detected: {p1} and {p2}"
 
-    def test_placements_within_bin_bounds(self, default_config: PackerConfig, sample_boxes: list[Box]) -> None:
+    def test_placements_within_bin_bounds(
+        self, default_config: PackerConfig, sample_boxes: list[Box]
+    ) -> None:
         """Test that all placements are within bin boundaries."""
         packer = FirstFitDecreasingPacker(default_config)
         result = packer.pack(sample_boxes)
-        
+
         for bin_obj in result.bins:
             for placement in bin_obj.placements:
                 assert placement.x0 >= 0
@@ -72,10 +73,10 @@ class TestPackingWorkflow:
             )
             for i in range(100)
         ]
-        
+
         packer = FirstFitDecreasingPacker(default_config)
         result = packer.pack(boxes)
-        
+
         assert result.placed_count == 100
         assert result.success_rate == 100.0
         assert result.elapsed_time_ms < 5000  # Should complete in < 5 seconds

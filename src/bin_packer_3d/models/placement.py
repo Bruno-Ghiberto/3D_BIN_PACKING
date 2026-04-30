@@ -10,31 +10,31 @@ from dataclasses import dataclass, field
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from bin_packer_3d.models.box import Box
     from bin_packer_3d.models.bin import Bin
+    from bin_packer_3d.models.box import Box
 
 
 @dataclass
 class Placement:
     """A box placement with 3D coordinates.
-    
+
     Represents a box placed at a specific position within a bin,
     with coordinates defining the bounding box corners.
-    
+
     Attributes:
         box: The box that was placed.
         bin_id: ID of the bin containing this placement.
         shelf_id: ID of the shelf within the bin (for shelf-based packing).
         x0, y0, z0: Minimum corner coordinates in mm.
         x1, y1, z1: Maximum corner coordinates in mm.
-    
+
     The coordinate system:
         - X: Length axis (0 to bin_length)
         - Y: Width axis (0 to bin_width)
         - Z: Height axis (0 to bin_height, bottom to top)
     """
 
-    box: "Box"
+    box: Box
     bin_id: int
     x0: float
     y0: float
@@ -81,12 +81,12 @@ class Placement:
             (self.z0 + self.z1) / 2,
         )
 
-    def overlaps_with(self, other: "Placement") -> bool:
+    def overlaps_with(self, other: Placement) -> bool:
         """Check if this placement overlaps with another.
-        
+
         Args:
             other: Another placement to check against.
-        
+
         Returns:
             True if the placements overlap in 3D space.
         """
@@ -117,6 +117,7 @@ class Placement:
         }
 
     def __repr__(self) -> str:
+        """Return a debug-friendly representation with id, bin, and bounding box."""
         return (
             f"Placement(box={self.box.id}, bin={self.bin_id}, "
             f"pos=({self.x0:.0f},{self.y0:.0f},{self.z0:.0f})-"
@@ -127,10 +128,10 @@ class Placement:
 @dataclass
 class PlacementResult:
     """Result of a packing operation.
-    
+
     Contains all information about a completed packing run including
     placed boxes, bins used, and comprehensive metrics.
-    
+
     Attributes:
         bins: List of bins with placements.
         unpacked_boxes: Boxes that couldn't be placed.
@@ -138,8 +139,8 @@ class PlacementResult:
         elapsed_time_ms: Time taken in milliseconds.
     """
 
-    bins: list["Bin"] = field(default_factory=list)
-    unpacked_boxes: list["Box"] = field(default_factory=list)
+    bins: list[Bin] = field(default_factory=list)
+    unpacked_boxes: list[Box] = field(default_factory=list)
     algorithm: str = ""
     elapsed_time_ms: float = 0.0
 
@@ -201,6 +202,7 @@ class PlacementResult:
         )
 
     def __repr__(self) -> str:
+        """Return a debug-friendly summary of placed/bins/utilisation."""
         return (
             f"PlacementResult(placed={self.placed_count}, "
             f"bins={self.bins_used}, util={self.utilization_percent:.1f}%)"
