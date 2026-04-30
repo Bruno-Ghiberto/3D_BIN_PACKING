@@ -136,11 +136,15 @@ jobs:
       - name: pip-audit
         # Audits the resolved environment. `--skip-editable` excludes our
         # own package (`bin-packer-3d` is not on PyPI yet — T141 in US8
-        # reserves the name); pip-audit only checks third-party deps. T048
-        # layers in a requirements.txt workflow once pip-tools is wired up;
-        # for the bootstrap we audit the editable install directly —
-        # equivalent coverage, fewer moving parts.
-        run: pip-audit --strict --skip-editable
+        # reserves the name); pip-audit only checks third-party deps.
+        #
+        # Why no `--strict`: `--strict` upgrades any "skipped" message into
+        # an error, which directly contradicts `--skip-editable` (the skip
+        # IS the desired behaviour for our editable install). Without
+        # `--strict`, pip-audit still exits non-zero on actual vulns —
+        # which is the gate we want. T048 layers in a requirements.txt
+        # workflow once pip-tools is wired up.
+        run: pip-audit --skip-editable
 
   pre-commit-parity:
     name: Pre-commit (run --all-files)

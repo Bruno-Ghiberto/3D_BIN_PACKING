@@ -12,6 +12,7 @@ Usage:
 from __future__ import annotations
 
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import click
 from rich.console import Console
@@ -20,6 +21,9 @@ from rich.table import Table
 from bin_packer_3d import __version__
 from bin_packer_3d.algorithms import ALGORITHMS
 from bin_packer_3d.config import PackerConfig, Settings
+
+if TYPE_CHECKING:
+    from bin_packer_3d.utils.metrics import PackingMetrics
 
 console = Console()
 
@@ -174,7 +178,7 @@ def pack(
     console.print("\n[bold green]Done![/bold green]\n")
 
 
-def _display_metrics_table(metrics) -> None:
+def _display_metrics_table(metrics: PackingMetrics) -> None:
     """Display metrics in a formatted table."""
     table = Table(title="Packing Metrics")
 
