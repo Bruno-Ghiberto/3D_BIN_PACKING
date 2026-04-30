@@ -1,9 +1,10 @@
 # 3D Bin Packing Solver
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Tests](https://img.shields.io/badge/tests-39%20passing-brightgreen.svg)](#testing)
+[![CI](https://github.com/Bruno-Ghiberto/3D_BIN_PACKING/actions/workflows/ci.yml/badge.svg)](https://github.com/Bruno-Ghiberto/3D_BIN_PACKING/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/Bruno-Ghiberto/3D_BIN_PACKING/branch/main/graph/badge.svg?flag=library)](https://codecov.io/gh/Bruno-Ghiberto/3D_BIN_PACKING)
+[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13%20%7C%203.14-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
 A professional Python implementation for solving the **3D Bin Packing Problem (3D-BPP)**, an NP-hard optimization problem with applications in logistics, warehousing, and container loading.
 

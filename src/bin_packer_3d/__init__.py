@@ -1,5 +1,4 @@
-"""
-bin_packer_3d - A 3D Bin Packing solver using heuristic algorithms.
+"""bin_packer_3d - A 3D Bin Packing solver using heuristic algorithms.
 
 This package provides efficient algorithms for solving the 3D Bin Packing Problem (3D-BPP),
 a classic NP-hard optimization problem with applications in logistics, warehousing,
@@ -22,22 +21,45 @@ Example:
     >>> result = packer.pack(boxes)
 """
 
-from bin_packer_3d.models.box import Box
+from bin_packer_3d.algorithms import ALGORITHMS, get_strategies, register
+from bin_packer_3d.benchmark import BenchmarkResult
+from bin_packer_3d.config import DataConfig, PackerConfig, Settings, VisualizationConfig
+from bin_packer_3d.data.loaders import ColumnMapping
 from bin_packer_3d.models.bin import Bin
+from bin_packer_3d.models.box import Box
+from bin_packer_3d.models.metadata import AlgorithmMetadata
 from bin_packer_3d.models.placement import Placement, PlacementResult
-from bin_packer_3d.config import PackerConfig, VisualizationConfig, DataConfig, Settings
+from bin_packer_3d.models.result import LoadReport, PackingResult, RejectedRow
+from bin_packer_3d.observability import StructuredAdapter, get_logger
 
-__version__ = "0.1.0"
-__author__ = "Bruno"
+__version__ = "0.2.0.dev0"
+__author__ = "Bruno Ghiberto"
+
+# Attach NullHandler to the package logger at import time so consumers
+# who have not configured logging never see "No handlers could be found
+# for logger bin_packer_3d" warnings. See Constitution §V and
+# docs/adr/0008-observability.md.
+get_logger("")
 
 __all__ = [
-    "__version__",
-    "Box",
+    "ALGORITHMS",
+    "AlgorithmMetadata",
+    "BenchmarkResult",
     "Bin",
+    "Box",
+    "ColumnMapping",
+    "DataConfig",
+    "LoadReport",
+    "PackerConfig",
+    "PackingResult",
     "Placement",
     "PlacementResult",
-    "PackerConfig",
-    "VisualizationConfig", 
-    "DataConfig",
+    "RejectedRow",
     "Settings",
+    "StructuredAdapter",
+    "VisualizationConfig",
+    "__version__",
+    "get_logger",
+    "get_strategies",
+    "register",
 ]

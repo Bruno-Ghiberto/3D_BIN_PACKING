@@ -1,0 +1,34 @@
+# Pre-commit config for bin-packer-3d — FR-013 (mirrors CI lint/format/type stages).
+# Run `pre-commit install` once per clone to activate the git hooks.
+# Run `pre-commit run --all-files` to execute the full suite locally.
+
+# legacy/ is preserved Alpha-era reference code; hooks must not touch it.
+exclude: '^legacy/'
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        args: [--markdown-linebreak-ext=md]
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-json
+      - id: check-added-large-files
+        args: [--maxkb=500]
+      - id: check-merge-conflict
+      - id: mixed-line-ending
+        args: [--fix=lf]
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    # Pin matches the ruff version resolved by `pip install -e ".[dev]"` in CI
+    # (`_ci-core.yml` lint + format-check jobs). Older pre-commit ruff versions
+    # reflow strings differently from current `ruff>=0.4` pip installs and cause
+    # local↔CI parity drift; bumping in lockstep avoids the gotcha. Dependabot's
+    # pip ecosystem rotates this on a weekly cadence.
+    rev: v0.15.5
+    hooks:
+      - id: ruff
+        args: [--fix]
+      - id: ruff-format

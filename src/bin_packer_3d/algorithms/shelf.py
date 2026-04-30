@@ -7,20 +7,22 @@ where items are placed on horizontal "shelves" within each bin.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, ClassVar
 
 from bin_packer_3d.algorithms.base import PackerBase
+from bin_packer_3d.algorithms.registry import register
 from bin_packer_3d.models.bin import Bin
 from bin_packer_3d.models.placement import Placement, PlacementResult
 
 if TYPE_CHECKING:
-    from bin_packer_3d.models.box import Box
     from bin_packer_3d.config import PackerConfig
+    from bin_packer_3d.models.box import Box
 
 
 @dataclass
 class FreeRectangle:
     """A 2D free rectangle in the shelf plane."""
+
     x: float
     y: float
     width: float
@@ -30,6 +32,7 @@ class FreeRectangle:
 @dataclass
 class Shelf:
     """A horizontal shelf layer within a bin."""
+
     z_offset: float
     bin_length: float
     bin_width: float
@@ -41,10 +44,9 @@ class Shelf:
     placements: list[Placement] = field(default_factory=list)
 
     def __post_init__(self) -> None:
+        """Initialise default free-rectangle and ceiling when unset."""
         if not self.free_rects:
-            self.free_rects = [
-                FreeRectangle(x=0, y=0, width=self.bin_length, depth=self.bin_width)
-            ]
+            self.free_rects = [FreeRectangle(x=0, y=0, width=self.bin_length, depth=self.bin_width)]
         # Default max_height is the remaining space to bin top
         if self.max_height is None:
             self.max_height = self.bin_height - self.z_offset
@@ -61,82 +63,88 @@ class Shelf:
             self.is_ceiling_locked = True
 
 
+@register("shelf")
 class ShelfPacker(PackerBase):
     """Shelf-based packing algorithm.
-    
+
     Items are placed on horizontal shelves within bins. Each shelf
     has a height determined by the tallest item placed on it.
-    
+
     This approach uses 2D rectangle packing (guillotine cuts) within
     each shelf, extended to 3D by stacking shelves vertically.
-    
+
     Complexity:
         Time: O(n * s * r) where s = shelves, r = rectangles per shelf
         Space: O(n + s * r)
     """
 
-    def __init__(self, config: "PackerConfig") -> None:
+    complexity: ClassVar[str] = "O(n log n)"
+    description: ClassVar[str] = "Shelf-based"
+
+    def __init__(self, config: PackerConfig) -> None:
+        """Initialise the shelf packer with the given configuration."""
         super().__init__(config)
         self._bins: list[Bin] = []
         self._bin_shelves: list[list[Shelf]] = []
 
     @property
     def name(self) -> str:
+        """Return the human-readable algorithm name."""
         return "Shelf-Based Packer"
 
-    def _pack_impl(self, boxes: list["Box"]) -> PlacementResult:
+    def _pack_impl(self, boxes: list[Box]) -> PlacementResult:
         """Implement shelf-based packing."""
         self._bins = []
         self._bin_shelves = []
-        unpacked: list["Box"] = []
-        
+        unpacked: list[Box] = []
+
         for box in boxes:
             placed = self._place_box(box)
             if not placed:
                 unpacked.append(box)
-        
+
         # Collect all placements into bins
         for bin_idx, bin_obj in enumerate(self._bins):
             for shelf in self._bin_shelves[bin_idx]:
                 for placement in shelf.placements:
                     bin_obj.add_placement(placement)
-        
+
         return PlacementResult(
             bins=self._bins,
             unpacked_boxes=unpacked,
         )
 
-    def _place_box(self, box: "Box") -> bool:
+    def _place_box(self, box: Box) -> bool:
         """Try to place box in existing bins/shelves or create new."""
         # Try existing bins
         for bin_idx in range(len(self._bins)):
             if self._try_place_in_bin(box, bin_idx):
                 return True
-        
+
         # Create new bin
         return self._create_new_bin_and_place(box)
 
-    def _try_place_in_bin(self, box: "Box", bin_idx: int) -> bool:
+    def _try_place_in_bin(self, box: Box, bin_idx: int) -> bool:
         """Try to place box in existing shelves or create new shelf."""
         bin_obj = self._bins[bin_idx]
-        
+
         # Check weight
         if not bin_obj.can_fit_weight(box.weight):
             return False
-        
+
         shelves = self._bin_shelves[bin_idx]
-        
+
         # Try existing shelves
         for shelf in shelves:
             if self._try_place_on_shelf(box, bin_idx, shelf):
                 return True
-        
+
         # Try creating new shelf
         return self._try_create_shelf(box, bin_idx)
 
     def _try_place_on_shelf(
         self,
-        box: "Box",
+        box: Box,
         bin_idx: int,
         shelf: Shelf,
     ) -> bool:
@@ -144,10 +152,7 @@ class ShelfPacker(PackerBase):
         for rect_idx, rect in enumerate(shelf.free_rects):
             for w, h, depth in box.orientations():
                 # Check if fits in rectangle and height fits within shelf's ceiling
-                if (w <= rect.width and
-                    depth <= rect.depth and
-                    h <= shelf.available_height):
-                    
+                if w <= rect.width and depth <= rect.depth and h <= shelf.available_height:
                     # Place the box
                     placement = Placement(
                         box=box,
@@ -160,19 +165,26 @@ class ShelfPacker(PackerBase):
                         y1=rect.y + depth,
                         z1=shelf.z_offset + h,
                     )
+                    # Consult the constraint registry before accepting.
+                    # Empty/unset constraints list = no-op pass (forward-compat
+                    # with US7 T131 which adds PackerConfig.constraints).
+                    if not self._check_constraints(
+                        placement, box, self._bins[bin_idx], shelf.placements
+                    ):
+                        continue
                     shelf.placements.append(placement)
-                    
+
                     # Update shelf height
                     if h > shelf.current_height:
                         shelf.current_height = h
-                    
+
                     # Split the rectangle
                     self._split_rectangle(shelf, rect_idx, w, depth)
                     return True
-        
+
         return False
 
-    def _try_create_shelf(self, box: "Box", bin_idx: int) -> bool:
+    def _try_create_shelf(self, box: Box, bin_idx: int) -> bool:
         """Try to create a new shelf and place box on it."""
         shelves = self._bin_shelves[bin_idx]
 
@@ -185,7 +197,7 @@ class ShelfPacker(PackerBase):
                     used_height = placement.z1
 
         # Check if there's room for a new shelf
-        for w, h, depth in box.orientations():
+        for _w, h, _depth in box.orientations():
             if used_height + h <= self.config.bin_height:
                 # Lock all existing shelves' ceilings at the new shelf's floor
                 # This prevents future placements from overlapping with the new shelf
@@ -210,7 +222,7 @@ class ShelfPacker(PackerBase):
 
         return False
 
-    def _create_new_bin_and_place(self, box: "Box") -> bool:
+    def _create_new_bin_and_place(self, box: Box) -> bool:
         """Create a new bin and place box in it."""
         new_bin = Bin(
             id=len(self._bins) + 1,
@@ -221,7 +233,7 @@ class ShelfPacker(PackerBase):
         )
         self._bins.append(new_bin)
         self._bin_shelves.append([])
-        
+
         bin_idx = len(self._bins) - 1
         if self._try_create_shelf(box, bin_idx):
             return True
@@ -241,23 +253,27 @@ class ShelfPacker(PackerBase):
         """Split a rectangle after placing a box (guillotine cut)."""
         rect = shelf.free_rects[rect_idx]
         del shelf.free_rects[rect_idx]
-        
+
         # Right space
         remaining_w = rect.width - used_w
         if remaining_w > 0:
-            shelf.free_rects.append(FreeRectangle(
-                x=rect.x + used_w,
-                y=rect.y,
-                width=remaining_w,
-                depth=rect.depth,
-            ))
-        
+            shelf.free_rects.append(
+                FreeRectangle(
+                    x=rect.x + used_w,
+                    y=rect.y,
+                    width=remaining_w,
+                    depth=rect.depth,
+                )
+            )
+
         # Top space (in 2D plane)
         remaining_d = rect.depth - used_d
         if remaining_d > 0:
-            shelf.free_rects.append(FreeRectangle(
-                x=rect.x,
-                y=rect.y + used_d,
-                width=used_w,
-                depth=remaining_d,
-            ))
+            shelf.free_rects.append(
+                FreeRectangle(
+                    x=rect.x,
+                    y=rect.y + used_d,
+                    width=used_w,
+                    depth=remaining_d,
+                )
+            )

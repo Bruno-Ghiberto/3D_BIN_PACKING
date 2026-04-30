@@ -1,0 +1,46 @@
+# PR title validator — Conventional Commits enforcement (T036, FR-016).
+#
+# Constitution §Commit style mandates Conventional Commits. The PR title is
+# the only commit message that survives squash-merge into main, so it is the
+# enforceable artefact. Allowed types match the constitution exactly; any
+# other prefix fails the check and blocks merge.
+
+name: PR Title
+
+on:
+  pull_request:
+    types:
+      - opened
+      - edited
+      - synchronize
+      - reopened
+
+permissions:
+  pull-requests: read
+
+jobs:
+  validate:
+    name: Conventional Commits
+    runs-on: ubuntu-latest
+    steps:
+      - uses: amannn/action-semantic-pull-request@e32d7e603df1aa1ba07e981f2a23455dee596825  # v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            chore
+            docs
+            refactor
+            test
+            ci
+            build
+            perf
+            style
+            revert
+          requireScope: false
+          subjectPattern: ^[a-z].+$
+          subjectPatternError: |
+            The PR title subject must start with a lowercase letter and not be
+            empty (Conventional Commits, Constitution §Commit style).

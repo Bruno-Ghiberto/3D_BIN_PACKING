@@ -1,0 +1,7 @@
+# CODEOWNERS — required reviewer for every change (T045, FR-016).
+#
+# Single-maintainer project at v0.2.0; the wildcard owner doubles as a guard
+# against accidental review-skip when branch protection is enabled (T040).
+# Add finer-grained rules when a co-maintainer joins.
+
+* @Bruno-Ghiberto

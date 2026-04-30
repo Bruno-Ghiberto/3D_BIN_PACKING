@@ -16,15 +16,20 @@ if TYPE_CHECKING:
 @dataclass
 class Bin:
     """A container/bin for packing boxes.
-    
+
     Attributes:
         id: Unique identifier for the bin.
         length: Length dimension in mm (X-axis).
         width: Width dimension in mm (Y-axis).
         height: Height dimension in mm (Z-axis).
-        max_weight: Maximum weight capacity in kg.
+        max_weight: Maximum weight capacity in kg. ``None`` means
+            "unlimited" — no weight cap is enforced and
+            :meth:`can_fit_weight` always returns ``True``. ``0.0``
+            means "known zero capacity" and rejects any positive
+            weight. The two states are distinguishable (spec
+            §Edge Cases "Unlimited bin weight").
         placements: List of box placements in this bin.
-    
+
     Example:
         >>> bin = Bin(id=1, length=860, width=890, height=1040)
         >>> bin.volume
@@ -38,7 +43,7 @@ class Bin:
     width: float
     height: float
     max_weight: float | None = None
-    placements: list["Placement"] = field(default_factory=list)
+    placements: list[Placement] = field(default_factory=list)
 
     def __post_init__(self) -> None:
         """Validate bin dimensions."""
@@ -77,8 +82,15 @@ class Bin:
 
     @property
     def total_weight(self) -> float:
-        """Calculate total weight of placed boxes in kg."""
-        return sum(p.box.weight for p in self.placements)
+        """Calculate total weight of placed boxes in kg.
+
+        Boxes with ``weight is None`` (unknown weight) are skipped —
+        ``None`` is not summable and means "no information", which is
+        distinct from ``0.0`` ("known zero"). Callers needing a
+        guarantee that every placed box has a known weight must check
+        ``p.box.weight`` themselves.
+        """
+        return sum(p.box.weight for p in self.placements if p.box.weight is not None)
 
     @property
     def remaining_weight_capacity(self) -> float | None:
@@ -92,28 +104,36 @@ class Bin:
         """Return number of boxes placed in this bin."""
         return len(self.placements)
 
-    def can_fit_weight(self, weight: float) -> bool:
+    def can_fit_weight(self, weight: float | None) -> bool:
         """Check if bin can accommodate additional weight.
-        
+
         Args:
-            weight: Weight to add in kg.
-        
+            weight: Weight to add in kg. ``None`` means "unknown
+                weight" — the check cannot be enforced and returns
+                ``True`` (consistent with FR-005 semantics introduced
+                in T025: unknown weights do not count against
+                capacity, distinct from a known ``0.0``).
+
         Returns:
-            True if weight fits or no weight limit is set.
+            True when the bin has no weight cap
+            (``max_weight is None``), OR the weight is unknown
+            (``weight is None``), OR the known weight plus
+            ``total_weight`` stays within ``max_weight``.
         """
-        if self.max_weight is None:
+        if self.max_weight is None or weight is None:
             return True
         return self.total_weight + weight <= self.max_weight
 
-    def add_placement(self, placement: "Placement") -> None:
+    def add_placement(self, placement: Placement) -> None:
         """Add a placement to this bin.
-        
+
         Args:
             placement: The placement to add.
         """
         self.placements.append(placement)
 
     def __repr__(self) -> str:
+        """Return a concise debug representation including dims and utilisation."""
         return (
             f"Bin(id={self.id}, "
             f"dims=({self.length}x{self.width}x{self.height}), "

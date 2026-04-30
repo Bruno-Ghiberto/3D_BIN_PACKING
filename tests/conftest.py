@@ -1,10 +1,44 @@
-"""Pytest fixtures for bin_packer_3d tests."""
+"""Pytest fixtures + Hypothesis profile setup for bin_packer_3d tests.
+
+The Hypothesis "ci" profile (T107, FR-043 / Constitution IV) is registered
+at import time and loaded automatically when ``CI=true`` is set in the
+runner's environment. The profile:
+
+- ``derandomize=True`` so failure replays use ``Phase.explicit`` examples
+  rather than fresh randomness, giving bit-identical CI runs across pushes.
+- ``database=None`` to avoid relying on the hypothesis cache directory
+  inside ephemeral containers.
+- ``print_blob=True`` so any failing example surfaces the reproducer blob
+  in the CI log.
+- ``max_examples=200`` — denser than the dev default to amortise the
+  property-suite runtime over CI's longer wall-clock budget.
+
+Local development uses the default "dev" profile (unmodified) so iteration
+stays fast. To reproduce a CI failure locally, run with
+``HYPOTHESIS_PROFILE=ci pytest tests/property/``.
+"""
+
+import os
 
 import pytest
+from hypothesis import HealthCheck, Phase, settings
 
-from bin_packer_3d.models.box import Box
-from bin_packer_3d.models.bin import Bin
 from bin_packer_3d.config import PackerConfig
+from bin_packer_3d.models.bin import Bin
+from bin_packer_3d.models.box import Box
+
+settings.register_profile(
+    "ci",
+    derandomize=True,
+    database=None,
+    print_blob=True,
+    max_examples=200,
+    phases=(Phase.explicit, Phase.reuse, Phase.generate, Phase.target, Phase.shrink),
+    suppress_health_check=[HealthCheck.too_slow],
+)
+
+if os.environ.get("CI", "").lower() == "true":
+    settings.load_profile("ci")
 
 
 @pytest.fixture

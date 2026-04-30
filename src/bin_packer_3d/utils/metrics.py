@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 @dataclass
 class PackingMetrics:
     """Comprehensive metrics for a packing result.
-    
+
     Attributes:
         total_boxes: Total boxes attempted.
         placed_boxes: Successfully placed boxes.
@@ -30,7 +30,7 @@ class PackingMetrics:
         elapsed_time_ms: Time taken (ms).
         algorithm: Algorithm name.
     """
-    
+
     total_boxes: int
     placed_boxes: int
     unpacked_boxes: int
@@ -44,9 +44,10 @@ class PackingMetrics:
     algorithm: str
 
     def __str__(self) -> str:
+        """Render a multi-line human-readable metrics summary."""
         return (
             f"Packing Metrics ({self.algorithm})\n"
-            f"{'='*40}\n"
+            f"{'=' * 40}\n"
             f"Boxes:        {self.placed_boxes}/{self.total_boxes} "
             f"({self.success_rate:.1f}% success)\n"
             f"Bins used:    {self.bins_used}\n"
@@ -56,12 +57,12 @@ class PackingMetrics:
         )
 
 
-def calculate_metrics(result: "PlacementResult") -> PackingMetrics:
+def calculate_metrics(result: PlacementResult) -> PackingMetrics:
     """Calculate comprehensive metrics from packing result.
-    
+
     Args:
         result: PlacementResult from a packing operation.
-    
+
     Returns:
         PackingMetrics with all calculated values.
     """
@@ -69,18 +70,18 @@ def calculate_metrics(result: "PlacementResult") -> PackingMetrics:
     placed_boxes = result.placed_count
     unpacked_boxes = len(result.unpacked_boxes)
     bins_used = result.bins_used
-    
+
     total_box_volume = result.total_box_volume
     total_bin_volume = result.total_bin_volume
-    
+
     utilization = result.utilization_percent
     success_rate = result.success_rate
-    
+
     # Average utilization per bin
     avg_util = 0.0
     if result.bins:
         avg_util = sum(b.utilization_percent for b in result.bins) / len(result.bins)
-    
+
     return PackingMetrics(
         total_boxes=total_boxes,
         placed_boxes=placed_boxes,

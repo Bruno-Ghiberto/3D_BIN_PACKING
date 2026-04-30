@@ -4,11 +4,11 @@ build-backend = "hatchling.build"
 
 [project]
 name = "bin-packer-3d"
-version = "0.1.0"
+version = "0.2.0.dev0"
 description = "A 3D Bin Packing solver using heuristic algorithms with interactive visualization"
 readme = "README.md"
 license = {text = "MIT"}
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 authors = [
     {name = "Bruno Ghiberto", email = "bruno.ghiberto@gmail.com"}
 ]
@@ -27,9 +27,10 @@ classifiers = [
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Scientific/Engineering",
     "Topic :: Scientific/Engineering :: Mathematics",
     "Typing :: Typed",
@@ -52,10 +53,16 @@ dev = [
     "pytest-cov>=4.1.0",
     "pytest-mock>=3.12.0",
     "mypy>=1.8.0",
-    "ruff>=0.1.0",
-    "black>=24.0.0",
+    "ruff>=0.4.0",
     "pre-commit>=3.6.0",
     "pandas-stubs>=2.0.0",
+    "hypothesis>=6.100.0",
+    "pip-audit>=2.9.0",
+    "pyyaml>=6.0",
+]
+docs = [
+    "mkdocs-material>=9.5.0",
+    "mkdocstrings[python]>=0.25.0",
 ]
 
 [project.scripts]
@@ -66,8 +73,38 @@ Homepage = "https://github.com/Bruno-Ghiberto/3D_BIN_PACKING"
 Repository = "https://github.com/Bruno-Ghiberto/3D_BIN_PACKING"
 Issues = "https://github.com/Bruno-Ghiberto/3D_BIN_PACKING/issues"
 
+[tool.hatch.build]
+exclude = [
+    "legacy/",
+    "CODE/",
+    "DATASETS/*.xlsx",
+    "benchmark/",
+    "docs/",
+    "tests/",
+    "Speckit-context-prompts/",
+    "specs/",
+    ".specify/",
+    ".claude/",
+    ".github/",
+    "LINKEDIN.txt",
+]
+
 [tool.hatch.build.targets.wheel]
 packages = ["src/bin_packer_3d"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"src/bin_packer_3d/py.typed" = "bin_packer_3d/py.typed"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "src/bin_packer_3d",
+    "tests",
+    "README.md",
+    "LICENSE",
+    "CHANGELOG.md",
+    "pyproject.toml",
+    "MANIFEST.in",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
@@ -76,6 +113,7 @@ addopts = ["-v", "--tb=short"]
 markers = [
     "slow: marks tests as slow",
     "integration: integration tests",
+    "property: hypothesis-driven invariant tests (FR-046)",
 ]
 
 [tool.coverage.run]
@@ -86,7 +124,7 @@ branch = true
 show_missing = true
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 strict = true
 plugins = ["pydantic.mypy"]
 
@@ -95,10 +133,32 @@ module = ["plotly.*", "pandas.*", "numpy.*"]
 ignore_missing_imports = true
 
 [tool.ruff]
-target-version = "py310"
+target-version = "py311"
 line-length = 100
-select = ["E", "W", "F", "I", "B", "C4", "UP"]
+extend-exclude = [
+    "legacy",    # preserved Alpha-era scripts, intentionally un-linted (US4 T081)
+    "DATASETS",  # data files, no Python
+]
 
-[tool.black]
-line-length = 100
-target-version = ["py310", "py311", "py312"]
+[tool.ruff.lint]
+select = [
+    "E", "W",    # pycodestyle
+    "F",         # pyflakes
+    "I",         # isort
+    "B",         # flake8-bugbear
+    "C4",        # flake8-comprehensions
+    "UP",        # pyupgrade
+    "D",         # pydocstyle (public-symbol docstring enforcement — FR-026)
+]
+ignore = [
+    "D203",      # conflicts with D211 — one blank line before class vs none
+    "D213",      # conflicts with D212 — multi-line summary on second vs first line
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["D100", "D101", "D102", "D103", "D104"]  # docstrings not required in tests
+"benchmark/**/*.py" = ["D100", "D103"]
+"scripts/**/*.py" = ["D100", "D103"]
