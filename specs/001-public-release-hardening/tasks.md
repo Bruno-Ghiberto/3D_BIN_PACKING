@@ -123,8 +123,8 @@ user-story phase is **independently completable and testable** per the spec's
 - [X] T037 [US2] [P] Create `.github/dependabot.yml` — weekly updates for `pip` and `github-actions` ecosystems, target `main` (Constitution §Dependency policy)
 - [X] T038 [US2] [P] Create `codecov.yml` at repo root — configure `library` flag with 90% threshold, `range: "70...100"`, `status.project.default.target: 90%` (FR-012, Constitution III)
 - [X] T039 [US2] Wire `codecov/codecov-action` (pinned SHA) into the `test` job in `_ci-core.yml` to upload `coverage.xml` with flag `library` (FR-012, FR-015)
-- [ ] T040 [US2] Document branch-protection requirements in `docs/maintainers.md`: every required check must pass (`lint`, `format-check`, `type-check`, `test (3.11..3.14)`, `pip-audit`, `pre-commit-parity`, `aggregate`, `pr-title`); no force pushes; no direct pushes to `main` (FR-017)
-- [ ] T041 [US2] [P] Add README badges: CI status, coverage (Codecov), supported Python versions (`3.11|3.12|3.13|3.14`), license (MIT) — PyPI badge added in US8 (FR-015)
+- [X] T040 [US2] Document branch-protection requirements in `docs/maintainers.md`: every required check must pass (`lint`, `format-check`, `type-check`, `test (3.11..3.14)`, `pip-audit`, `pre-commit-parity`, `aggregate`, `pr-title`); no force pushes; no direct pushes to `main` (FR-017) — HARD STOP §8: doc delivered with full required-check table; maintainer applies the rules in GitHub Settings → Branches.
+- [X] T041 [US2] [P] Add README badges: CI status, coverage (Codecov), supported Python versions (`3.11|3.12|3.13|3.14`), license (MIT) — PyPI badge added in US8 (FR-015)
 - [X] T042 [US2] [P] Create `.github/ISSUE_TEMPLATE/bug_report.yml` — structured bug-report form (summary, expected/actual, repro steps, environment: OS, Python, bin-packer-3d version) (FR-016)
 - [X] T043 [US2] [P] Create `.github/ISSUE_TEMPLATE/feature_request.yml` — structured feature-request form (FR-016)
 - [X] T044 [US2] [P] Create `.github/PULL_REQUEST_TEMPLATE.md` — Summary, Testing, Constitution Impact, Linked spec/issue, Breaking changes (Constitution §Pull-request workflow)
