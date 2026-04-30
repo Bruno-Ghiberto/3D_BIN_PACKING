@@ -103,6 +103,45 @@ as interpreted by the project constitution (see
   `tests/integration/test_cli.py::test_info_lists_registry`, and
   `TestBox.test_weight_*` additions in `tests/unit/test_models.py`.
 
+**US2 Continuous Integration Pipeline — bootstrap (T031..T048, T049 deferred):**
+
+- `.github/workflows/ci.yml` — thin dispatcher with
+  concurrency-cancellation per ADR-0003. Triggers on push to `main`
+  and PR open/sync/reopen/ready_for_review (FR-010).
+- `.github/workflows/_ci-core.yml` — reusable quality-gate core
+  exposing `outputs.all_passed` for downstream callers. Six required
+  jobs (`lint`, `format-check`, `type-check`, `test`, `pip-audit`,
+  `pre-commit-parity`) plus an `aggregate` OR-bar (FR-010, FR-011,
+  FR-014, FR-017).
+- `.github/workflows/pr-title.yml` — Conventional Commits enforcement
+  on PR titles via `amannn/action-semantic-pull-request`; allowed
+  type list mirrors Constitution §Commit style verbatim.
+- `.github/workflows/security.yml` — CodeQL (Python) on push, PR, and
+  Monday cron with `security-and-quality` queries (FR-014, advisory
+  at v0.2.0).
+- `codecov.yml` — `library` flag scoped to `src/bin_packer_3d/`,
+  90 % project + patch targets, `range: 70...100`. Hard
+  `--cov-fail-under=90` gate stays OFF until T049 (FR-012).
+- `.github/dependabot.yml` — weekly pip + github-actions updates
+  targeting `main` (Constitution §Dependency policy).
+- `.github/ISSUE_TEMPLATE/bug_report.yml` and
+  `.github/ISSUE_TEMPLATE/feature_request.yml` — structured GitHub
+  issue forms (FR-016).
+- `.github/PULL_REQUEST_TEMPLATE.md` — Summary / linked spec /
+  changes / testing checklist / breaking-change checklist /
+  eight-principle Constitution impact walk (Constitution §PR workflow).
+- `.github/CODEOWNERS` — `* @Bruno-Ghiberto`.
+- `docs/maintainers.md` (T040 hard stop) — operational notes for
+  branch-protection rules, required-status-check table, Codecov
+  activation, and reserved sections for T140 OIDC publisher / T139
+  GHCR visibility / T072 Pages source / T157 repo metadata.
+- `pyyaml >= 6.0` added to dev extras (explicit; previously transitive
+  via pre-commit) for the new YAML-parsing tests.
+- New tests: `tests/integration/test_ci_workflows.py` (5 cases —
+  parametrised over the four workflow files plus a parity check),
+  `tests/integration/test_precommit_parity.py` (2 cases —
+  `pre-commit-parity` job design + sanity).
+
 ### Changed
 
 **Setup:**
@@ -177,6 +216,17 @@ as interpreted by the project constitution (see
   `print("Warning: ...")` — no silent `continue` (Constitution §V).
 - `Bin.total_weight` now skips boxes with `weight is None` rather
   than summing `None` into a float (spec §Edge Cases).
+
+**US2 (v0.2.0):**
+
+- `README.md` badge block swapped to live signals: GitHub Actions CI,
+  Codecov coverage (library flag), Python `3.11 | 3.12 | 3.13 | 3.14`,
+  MIT licence, and Ruff. Stale badges removed (Python 3.10+, vanity
+  "39 tests passing", Black). PyPI badge lands in US8 T143; README
+  body overhaul lands in US3 T074. (FR-015)
+- Every `uses:` clause in `.github/workflows/*.yml` is pinned to a
+  full 40-char commit SHA with friendly version comment. Dependabot
+  rotates on a weekly cadence (T035).
 
 ### Fixed
 
