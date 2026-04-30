@@ -1,0 +1,29 @@
+# CI dispatcher — thin wrapper around the reusable core (T033, FR-010, FR-017).
+#
+# This file is intentionally tiny. All real CI logic lives in `_ci-core.yml`
+# so that future workflows (release.yml, benchmark-br1.yml, docs.yml) can
+# call the same gate without duplicating the matrix or the job definitions.
+# See ADR-0003 for the dispatcher / reusable-core architecture.
+#
+# `concurrency` cancels superseded runs on the same ref so a force-push or a
+# rapid push sequence doesn't queue stale runs against the merge queue.
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  core:
+    uses: ./.github/workflows/_ci-core.yml
+    secrets: inherit

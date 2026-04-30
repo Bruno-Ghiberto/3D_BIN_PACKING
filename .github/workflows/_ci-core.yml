@@ -1,0 +1,196 @@
+# Reusable CI core — quality-gate bundle (T034, T039, FR-010..FR-014, FR-017).
+#
+# This workflow is `workflow_call`-only; `ci.yml` invokes it on push/PR and
+# `release.yml` (Phase C) gates the publish chain on its `all_passed` output.
+# Splitting "what gates a merge" from "what triggers it" lets every later
+# workflow reuse the same definition of green — exactly one source of truth
+# per ADR-0003.
+#
+# Phase A bootstrap notes (relaxations to be tightened later):
+#
+#   - matrix uses Python 3.11 only; T049 (Invocation 10) expands to
+#     3.11 / 3.12 / 3.13 / 3.14 once US5/6/7 land enough tests to make the
+#     wider matrix meaningful.
+#   - coverage is uploaded but `--cov-fail-under=90` is NOT enforced in
+#     pytest yet (existing baseline is 80 %); T049 turns the gate on
+#     alongside the matrix expansion.
+#   - actions are referenced by tag in this commit; T035 (next commit)
+#     pins every `uses:` to a full commit SHA per the security policy
+#     inherited from The-Embedinator.
+
+name: CI Core
+
+on:
+  workflow_call:
+    outputs:
+      all_passed:
+        description: "True iff every required gate succeeded."
+        value: ${{ jobs.aggregate.outputs.all_passed }}
+
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    name: Lint (ruff check)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+      - name: ruff check
+        run: ruff check .
+
+  format-check:
+    name: Format (ruff format --check)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+      - name: ruff format --check
+        run: ruff format --check .
+
+  type-check:
+    name: Type check (mypy --strict)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+      - name: mypy --strict src/bin_packer_3d/
+        run: mypy --strict src/bin_packer_3d/
+
+  test:
+    name: Tests (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11"]   # Phase A bootstrap; expanded in T049
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+      - name: pytest with coverage
+        run: |
+          pytest tests/ \
+            -m "not slow" \
+            --cov=src/bin_packer_3d \
+            --cov-report=xml \
+            --cov-report=term
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage.xml
+          flags: library
+          # Phase A: warn-only on upload failures so transient codecov outages
+          # don't block merges. T049 flips this to true alongside the matrix
+          # expansion and the --cov-fail-under=90 gate.
+          fail_ci_if_error: false
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  pip-audit:
+    name: Dependency audit (pip-audit)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - name: Install dev dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e ".[dev]"
+      - name: pip-audit
+        # Audits the resolved environment. T048 layers in a requirements.txt
+        # workflow once pip-tools is wired up; for the bootstrap we audit the
+        # editable install directly — equivalent coverage, fewer moving parts.
+        run: pip-audit --strict
+
+  pre-commit-parity:
+    name: Pre-commit (run --all-files)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: pyproject.toml
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          restore-keys: |
+            pre-commit-${{ runner.os }}-
+      - name: Install pre-commit
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install pre-commit
+      - name: pre-commit run --all-files
+        run: pre-commit run --all-files --show-diff-on-failure
+
+  aggregate:
+    name: Aggregate gate result
+    needs: [lint, format-check, type-check, test, pip-audit, pre-commit-parity]
+    if: always()
+    runs-on: ubuntu-latest
+    outputs:
+      all_passed: ${{ steps.compute.outputs.all_passed }}
+    steps:
+      - id: compute
+        name: Compute all_passed
+        run: |
+          declare -A results=(
+            [lint]="${{ needs.lint.result }}"
+            [format-check]="${{ needs.format-check.result }}"
+            [type-check]="${{ needs.type-check.result }}"
+            [test]="${{ needs.test.result }}"
+            [pip-audit]="${{ needs.pip-audit.result }}"
+            [pre-commit-parity]="${{ needs.pre-commit-parity.result }}"
+          )
+
+          all_passed=true
+          for job in "${!results[@]}"; do
+            if [ "${results[$job]}" != "success" ]; then
+              echo "::error::job '$job' result='${results[$job]}'"
+              all_passed=false
+            fi
+          done
+
+          echo "all_passed=${all_passed}" >> "$GITHUB_OUTPUT"
+          if [ "${all_passed}" != "true" ]; then
+            exit 1
+          fi
