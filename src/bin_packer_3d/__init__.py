@@ -22,10 +22,12 @@ Example:
 """
 
 from bin_packer_3d.algorithms import ALGORITHMS, get_strategies, register
+from bin_packer_3d.benchmark import BenchmarkResult
 from bin_packer_3d.config import DataConfig, PackerConfig, Settings, VisualizationConfig
 from bin_packer_3d.data.loaders import ColumnMapping
 from bin_packer_3d.models.bin import Bin
 from bin_packer_3d.models.box import Box
+from bin_packer_3d.models.metadata import AlgorithmMetadata
 from bin_packer_3d.models.placement import Placement, PlacementResult
 from bin_packer_3d.models.result import LoadReport, PackingResult, RejectedRow
 from bin_packer_3d.observability import StructuredAdapter, get_logger
@@ -41,6 +43,8 @@ get_logger("")
 
 __all__ = [
     "ALGORITHMS",
+    "AlgorithmMetadata",
+    "BenchmarkResult",
     "Bin",
     "Box",
     "ColumnMapping",

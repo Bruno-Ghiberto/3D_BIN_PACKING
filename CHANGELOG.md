@@ -164,6 +164,70 @@ as interpreted by the project constitution (see
   at every commit since Phase 1, so the sweep landed implicitly. T050
   confirms the invariant holds at runtime.
 
+**US5 Algorithm Portfolio + Benchmarks — Part 1 of 3 (T085, T086, T092, T096, T097, T100, T106, T107, T108 partial, T109):**
+
+This is the v0.3.0 cycle's first slice — cimientos plus the simplest
+of the three new packers. Parts 2 (Extreme Point + benchmark engine)
+and 3 (Maximal Rectangles + CI gate + SC-006) ship in subsequent
+invocations to keep the OR-quality bar high.
+
+- New module `bin_packer_3d.benchmark` (T097) with re-export of
+  `BenchmarkResult` (T100) — dataclass per
+  `contracts/benchmark-format.md` plus `to_single_document` /
+  `to_comparison_document` envelope builders, a deterministic
+  `dumps` helper (2-space indent, sorted keys, ISO 8601 datetimes),
+  and `SCHEMA_VERSION = "1"`.
+- New module `bin_packer_3d.models.metadata` (T096) with
+  `AlgorithmMetadata` frozen dataclass (`name`, `version`,
+  `parameters`, `seed`, `timestamp`) — provenance record attached
+  to every packing run and benchmark result; `_utcnow()` helper
+  returns timezone-aware UTC `datetime`. Reproducibility contract
+  per FR-043 / Constitution §IV: identical metadata + same seed
+  ⇒ bit-identical placement decisions.
+- New `BestFitDecreasingPacker` (T092) registered under `"bfd"`
+  with classvars `complexity = "O(n log n)"` and
+  `description = "Best Fit Decreasing — concentrate fills"`. Picks
+  the bin with smallest summed remaining free volume among those
+  that have a fitting space; reuses FFD's `_can_fit_box` + guillotine
+  splits so any FFD↔BFD difference in `volume_utilisation` or
+  `n_bins_used` is purely the heuristic, not the fitting test.
+- New tier `tests/property/test_invariants.py` (T085) parametrising
+  4 FR-046 invariants (no-overlap, in-bounds, volume conservation,
+  count conservation) over every key in `ALGORITHMS`. Hypothesis
+  runs 100 examples per case in dev / 200 in CI. Adding a new packer
+  (Extreme Point in Part 2, Maximal Rectangles in Part 3) auto-
+  enrols it via the parametrize-at-collection-time pattern.
+- `tests/conftest.py` registers a Hypothesis `ci` profile (T107)
+  with `derandomize=True`, `database=None`, `print_blob=True`,
+  `max_examples=200`, and an explicit `phases` tuple. Loaded
+  automatically when `CI=true`; `HYPOTHESIS_PROFILE=ci pytest
+  tests/property/` reproduces a CI failure locally.
+- `pyproject.toml` `[tool.pytest.ini_options]` markers list (T106)
+  gains `property: hypothesis-driven invariant tests (FR-046)`.
+- `PackerConfig.seed: int | None = None` (T109) for FR-043 — the
+  field is plumbed through to `AlgorithmMetadata` so benchmark
+  results record the seed in effect.
+- New tests: `tests/unit/test_bfd.py` (T086, 8 cases — empty / oversized
+  / hand-computed four-box / name / registry membership / ClassVar
+  metadata). Placed in a separate file (deviating from the literal
+  `tests/unit/test_algorithms.py::TestBFD` task description) so the
+  test-first ImportError stays isolated from existing FFD/Shelf
+  tests during the red phase.
+- Public re-exports on `bin_packer_3d.__init__` (T108 partial): add
+  `AlgorithmMetadata`, `BenchmarkResult`. `BenchmarkRunner` lands in
+  Part 2 (T102) and joins `__all__` then.
+
+### Changed
+
+**US5 Part 1:**
+
+- `bin_packer_3d.algorithms.__init__` now imports `bfd.py` eagerly
+  (alongside FFD and Shelf) so `bin-packer info`, the registry-driven
+  CLI choice list, AND `tests/property/test_invariants.py`'s
+  parametrize-at-collection-time all see BFD without depending on
+  test-file collection order. Fixes a latent ordering bug; future
+  packers (Extreme Point, Maximal Rectangles) follow the same pattern.
+
 ### Changed
 
 **Setup:**
