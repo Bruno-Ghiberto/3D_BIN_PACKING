@@ -1,0 +1,62 @@
+# Feature-request issue form (T043, FR-016).
+
+name: Feature request
+description: Propose a new feature, enhancement, or API addition for bin-packer-3d.
+title: "[feature]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for thinking about how to make bin-packer-3d better.
+        Feature requests are evaluated against the project constitution
+        (`.specify/memory/constitution.md`) and the active spec — please
+        check both before filing to spot duplicates or known scope.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem statement
+      description: What pain point or gap motivates this request? Concrete is better than abstract.
+      placeholder: I need to constrain certain boxes to specific orientations (e.g. fragile cargo only "flat").
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: How would you like the feature to work? An example API or CLI invocation helps a lot.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Workarounds you tried, or other libraries/approaches you compared against.
+    validations:
+      required: false
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope
+      description: Which audience does this primarily serve?
+      options:
+        - Library users (Python API)
+        - CLI users
+        - Operations-research / benchmarking
+        - Documentation / onboarding
+        - Tooling / CI / release
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: extras
+    attributes:
+      label: Additional context
+      description: References to literature, issues, or related discussions.
+    validations:
+      required: false

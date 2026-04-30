@@ -1,0 +1,86 @@
+# Bug-report issue form (T042, FR-016).
+
+name: Bug report
+description: Report a defect, regression, or unexpected behaviour in bin-packer-3d.
+title: "[bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report.
+        Please fill in every section — incomplete reports take longer to triage.
+
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: One or two sentences describing the bug.
+      placeholder: "`bin-packer pack` raises KeyError when the CSV omits the weight column."
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+      description: What did you expect to happen?
+      placeholder: The loader honours the column mapping and treats missing weights as None.
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+      description: What actually happened? Include the full traceback if any.
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Steps to reproduce
+      description: Minimal commands or code that reproduces the bug.
+      placeholder: |
+        1. `pip install bin-packer-3d==<version>`
+        2. Save the attached CSV as `boxes.csv`
+        3. Run `bin-packer pack boxes.csv`
+      render: shell
+    validations:
+      required: true
+
+  - type: input
+    id: bin-packer-version
+    attributes:
+      label: bin-packer-3d version
+      description: Output of `python -c "import bin_packer_3d; print(bin_packer_3d.__version__)"`.
+      placeholder: "0.2.0"
+    validations:
+      required: true
+
+  - type: input
+    id: python-version
+    attributes:
+      label: Python version
+      description: Output of `python --version`.
+      placeholder: "Python 3.12.4"
+    validations:
+      required: true
+
+  - type: input
+    id: os
+    attributes:
+      label: Operating system
+      placeholder: "Ubuntu 24.04 / macOS 14.5 / Windows 11"
+    validations:
+      required: true
+
+  - type: textarea
+    id: extras
+    attributes:
+      label: Additional context
+      description: Logs, screenshots, sample inputs, or anything else that helps diagnose the issue.
+    validations:
+      required: false

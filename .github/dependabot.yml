@@ -1,0 +1,49 @@
+# Dependabot — weekly dependency updates (T037, FR-014).
+#
+# Two ecosystems are tracked:
+#
+#   - `pip`            — runtime + dev + docs extras declared in pyproject.toml
+#   - `github-actions` — every action `uses:` clause across .github/workflows
+#
+# The schedule keeps reviewer load predictable (one batch per week, Monday)
+# while still surfacing CVE-driven security patches promptly via the separate
+# `security-updates` channel that Dependabot opens automatically when a fix
+# is required.
+#
+# Constitution §Dependency policy mandates that every dependency change be
+# reviewed; auto-merge is intentionally NOT enabled.
+
+version: 2
+
+updates:
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    target-branch: "main"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "python"
+    commit-message:
+      prefix: "chore(deps)"
+      include: "scope"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "06:00"
+      timezone: "Etc/UTC"
+    target-branch: "main"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+      - "github-actions"
+    commit-message:
+      prefix: "chore(ci)"
+      include: "scope"
