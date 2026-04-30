@@ -23,31 +23,36 @@ stays advisory at v0.2.0.
 ### Required status checks
 
 Configure these in **Settings → Branches → Branch protection rules → main**
-under "Require status checks to pass before merging":
+under "Require status checks to pass before merging". The strings below are
+the EXACT check-names GitHub reports — discovered empirically by running
+PR #1 once. The `core /` prefix on most checks comes from `ci.yml`'s
+`core:` job calling `_ci-core.yml` via `workflow_call`; do not omit it.
 
-| Check name (GitHub UI)             | Source workflow                  | Job ID inside the workflow      |
-|------------------------------------|----------------------------------|---------------------------------|
-| `Lint (ruff check)`                | `ci.yml` → `_ci-core.yml`        | `lint`                          |
-| `Format (ruff format --check)`     | `ci.yml` → `_ci-core.yml`        | `format-check`                  |
-| `Type check (mypy --strict)`       | `ci.yml` → `_ci-core.yml`        | `type-check`                    |
-| `Tests (Python 3.11)`              | `ci.yml` → `_ci-core.yml`        | `test` (matrix: 3.11)           |
-| `Dependency audit (pip-audit)`     | `ci.yml` → `_ci-core.yml`        | `pip-audit`                     |
-| `Pre-commit (run --all-files)`     | `ci.yml` → `_ci-core.yml`        | `pre-commit-parity`             |
-| `Aggregate gate result`            | `ci.yml` → `_ci-core.yml`        | `aggregate`                     |
-| `Conventional Commits`             | `pr-title.yml`                   | `validate`                      |
+| Check name (paste into GitHub UI)       | Source workflow                  | Job ID inside the workflow      |
+|-----------------------------------------|----------------------------------|---------------------------------|
+| `core / Lint (ruff check)`              | `ci.yml` → `_ci-core.yml`        | `lint`                          |
+| `core / Format (ruff format --check)`   | `ci.yml` → `_ci-core.yml`        | `format-check`                  |
+| `core / Type check (mypy --strict)`     | `ci.yml` → `_ci-core.yml`        | `type-check`                    |
+| `core / Tests (Python 3.11)`            | `ci.yml` → `_ci-core.yml`        | `test` (matrix: 3.11)           |
+| `core / Dependency audit (pip-audit)`   | `ci.yml` → `_ci-core.yml`        | `pip-audit`                     |
+| `core / Pre-commit (run --all-files)`   | `ci.yml` → `_ci-core.yml`        | `pre-commit-parity`             |
+| `core / Aggregate gate result`          | `ci.yml` → `_ci-core.yml`        | `aggregate`                     |
+| `Conventional Commits`                  | `pr-title.yml`                   | `validate`                      |
 
 Notes:
 
 - The matrix expands to Python `3.11 / 3.12 / 3.13 / 3.14` in T049
-  (Invocation 10, v0.3.0). When that lands, add the additional matrix
-  legs as required checks.
-- `Aggregate gate result` is the OR-bar that downstream workflows read via
-  `outputs.all_passed`; keeping it required protects against any
+  (Invocation 10, v0.3.0). When that lands, add `core / Tests (Python 3.12)`,
+  `core / Tests (Python 3.13)`, and `core / Tests (Python 3.14)` as
+  additional required checks.
+- `core / Aggregate gate result` is the OR-bar that downstream workflows
+  read via `outputs.all_passed`; keeping it required protects against any
   individual gate being silently disabled.
 - `CodeQL (Python)` from `security.yml` is **advisory**. Do NOT add it to
   required checks at v0.2.0 — false positives or rule churn would block
-  merges. Re-evaluate at v1.0.0 release per the constitution’s security
-  review.
+  merges. Re-evaluate at v1.0.0 release per the constitution's security
+  review. (GitHub also reports a meta-check named just `CodeQL` from the
+  Security tab; that one is also advisory and should not be added.)
 
 ### Other branch-protection rules to enable
 
