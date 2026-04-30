@@ -142,6 +142,28 @@ as interpreted by the project constitution (see
   `tests/integration/test_precommit_parity.py` (2 cases —
   `pre-commit-parity` job design + sanity).
 
+**US3 Documentation — seed (T020, T050, T051; T052 preempted by T007):**
+
+- `tests/unit/test_docstrings.py` — runtime forward guard iterating
+  `bin_packer_3d.__all__` and asserting every documentable symbol
+  (classes + callables, excluding dunders and pure data attributes)
+  carries a non-empty `inspect.getdoc`. Defence in depth alongside
+  `ruff D` lint-time enforcement (T007); empirical red-fire validated
+  by monkey-patching `ColumnMapping.__doc__ = ""` pre-commit (FR-026,
+  Principle VI NON-NEG.).
+- `tests/integration/test_docs_consistency.py` — guards
+  `docs/algorithms/` ↔ `ALGORITHMS` registry alignment (US1 AC6 +
+  US3 AC8). Skip-when-absent design: ``pytest.skip``s while the
+  directory is unauthored; flips to strict assertion mode automatically
+  when Invocation 13 lands `docs/algorithms/{ffd,shelf,...}.md`. This
+  resolves the T020 deferral cleanly (the original "permanently red
+  test" concern from Invocation 3 is sidestepped without weakening the
+  invariant).
+- T052 (docstring sweep on `__all__`) closed as preempted: T007's
+  pydocstyle Google-convention rules have gated missing docstrings
+  at every commit since Phase 1, so the sweep landed implicitly. T050
+  confirms the invariant holds at runtime.
+
 ### Changed
 
 **Setup:**
