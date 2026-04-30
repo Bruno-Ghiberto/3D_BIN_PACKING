@@ -113,6 +113,7 @@ addopts = ["-v", "--tb=short"]
 markers = [
     "slow: marks tests as slow",
     "integration: integration tests",
+    "property: hypothesis-driven invariant tests (FR-046)",
 ]
 
 [tool.coverage.run]

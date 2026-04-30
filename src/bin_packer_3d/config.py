@@ -39,6 +39,16 @@ class PackerConfig(BaseModel):
         default="ffd",
         description="Packing strategy — validated against the ALGORITHMS registry",
     )
+    seed: int | None = Field(
+        default=None,
+        description=(
+            "Optional seed for reproducible runs (FR-043). When set, "
+            "randomised algorithms and benchmark sampling produce "
+            "bit-identical results across executions with identical "
+            "(seed, input, config). When None, a fresh seed is generated "
+            "per run and surfaced via AlgorithmMetadata."
+        ),
+    )
 
     @field_validator("strategy")
     @classmethod
