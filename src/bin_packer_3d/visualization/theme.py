@@ -28,19 +28,22 @@ import plotly.graph_objects as go
 # `colour_for_box`. The tuple here mirrors that constant so theme.py
 # remains importable without a dependency on palette.py.
 SET3: tuple[str, ...] = (
-    "#8DD3C7",
-    "#FFFFB3",
-    "#BEBADA",
-    "#FB8072",
-    "#80B1D3",
-    "#FDB462",
-    "#B3DE69",
-    "#FCCDE5",
-    "#D9D9D9",
-    "#BC80BD",
-    "#CCEBC5",
-    "#FFED6F",
+    "#D9D9D9",  # grey
+    "#FFED6F",  # yellow
+    "#80B1D3",  # blue
+    "#FB8072",  # salmon
+    "#BEBADA",  # lavender
+    "#FDB462",  # orange
+    "#8DD3C7",  # turquoise
+    "#B3DE69",  # green
+    "#FCCDE5",  # pink
+    "#FFFFB3",  # cream
+    "#BC80BD",  # purple
+    "#CCEBC5",  # mint
 )
+# Ordering matches `bin_packer_3d.visualization.palette.SET3` and is
+# tuned for max min adjacent CIELAB dE under deuteranopia + protanopia
+# simulation (~39.80; well above the ADR-012 floor of 15).
 
 _AXIS_LABEL_FORMAT = "{name} (mm)"
 
