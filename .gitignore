@@ -80,6 +80,7 @@ output_*/
 # HTML visualizations (generated)
 *.html
 !templates/*.html
+!tests/fixtures/expected/**/*.html
 
 # Data files (keep sample in DATASETS)
 *.csv
