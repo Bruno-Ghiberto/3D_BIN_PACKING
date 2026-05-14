@@ -31,6 +31,13 @@ from bin_packer_3d.models.metadata import AlgorithmMetadata
 from bin_packer_3d.models.placement import Placement, PlacementResult
 from bin_packer_3d.models.result import LoadReport, PackingResult, RejectedRow
 from bin_packer_3d.observability import StructuredAdapter, get_logger
+from bin_packer_3d.visualization.palette import SET3, colour_for_box
+from bin_packer_3d.visualization.theme import (
+    BIN_PACKER_3D_DARK,
+    BIN_PACKER_3D_LIGHT,
+    VisualisationStyle,
+    apply_theme,
+)
 
 __version__ = "0.2.0.dev0"
 __author__ = "Bruno Ghiberto"
@@ -44,6 +51,8 @@ get_logger("")
 __all__ = [
     "ALGORITHMS",
     "AlgorithmMetadata",
+    "BIN_PACKER_3D_DARK",
+    "BIN_PACKER_3D_LIGHT",
     "BenchmarkResult",
     "Bin",
     "Box",
@@ -55,10 +64,14 @@ __all__ = [
     "Placement",
     "PlacementResult",
     "RejectedRow",
+    "SET3",
     "Settings",
     "StructuredAdapter",
+    "VisualisationStyle",
     "VisualizationConfig",
     "__version__",
+    "apply_theme",
+    "colour_for_box",
     "get_logger",
     "get_strategies",
     "register",
