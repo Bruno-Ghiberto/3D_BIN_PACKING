@@ -397,6 +397,17 @@ invocations to keep the OR-quality bar high.
   computed from `ALGORITHMS` (US1 T029).
 - Redundant `### Changed` subsection duplicating Setup entries.
 
+### Debt
+
+**Spec-02 Phase B'-1 (T038):**
+
+- `src/bin_packer_3d/visualization/plotter.py` — narrow
+  `# type: ignore[import-untyped]` on the `import kaleido` call inside
+  the static-export branch. Kaleido 0.2.x (pinned via DR-11) ships
+  without a `py.typed` marker. Revisit when kaleido publishes type
+  stubs OR when a future spec migrates this branch to the Kaleido 1.x
+  `write_fig()` API + Plotly 6.x.
+
 ## [0.1.0] — 2026-04-22
 
 ### Added
