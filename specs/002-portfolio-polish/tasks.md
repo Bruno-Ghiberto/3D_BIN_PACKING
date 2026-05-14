@@ -49,7 +49,7 @@ description: "Task list for spec-02: Portfolio Polish of bin-packer-3d"
 
 - [x] T007 [P] Create empty `examples/README.md` placeholder (final content added in US5)
 - [x] T008 [P] Create empty directory `tests/fixtures/expected/` (will hold visualisation snapshots in US2)
-- [ ] T009 Capture install-footprint baseline on a clean Python 3.11 venv: `pip install bin-packer-3d` (no extras), measure `du -sb` on `site-packages/bin_packer_3d/` AND on the venv's `site-packages/` total, record both to `tests/fixtures/install_footprint_baseline.json` (depends on T001–T004 being merged so the baseline matches the new pyproject configuration)
+- [x] T009 Capture install-footprint baseline on a clean Python 3.11 venv: `pip install bin-packer-3d` (no extras), measure `du -sb` on `site-packages/bin_packer_3d/` AND on the venv's `site-packages/` total, record both to `tests/fixtures/install_footprint_baseline.json` (depends on T001–T004 being merged so the baseline matches the new pyproject configuration)
 - [x] T010 [P] Write red test `tests/integration/test_install_footprint.py` asserting `pip install bin-packer-3d` (no extras) install footprint ≤105% of the value committed in `tests/fixtures/install_footprint_baseline.json` (depends on T009)
 - [ ] T011 [P] Write red test `tests/unit/test_dataset_generator.py` asserting (a) same seed → byte-identical CSV, (b) generated dataset achieves ≥60% BFD utilisation on default bin dims (860×890×1040 mm), (c) generator completes in ≤5 seconds
 - [ ] T012 Author `scripts/generate_headline_dataset.py` implementing bin-feasibility-driven recursive guillotine cuts (ADR-009) — turns T011 green
