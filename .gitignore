@@ -92,6 +92,7 @@ output_*/
 *.log
 test_*.env
 verify_*.py
+!scripts/verify_*.py
 
 # Jupyter notebooks checkpoints
 .ipynb_checkpoints/
