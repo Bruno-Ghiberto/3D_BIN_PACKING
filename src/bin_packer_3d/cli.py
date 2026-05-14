@@ -85,6 +85,17 @@ def main(ctx: click.Context, debug: bool) -> None:
     default=True,
     help="Generate 3D visualizations",
 )
+@click.option(
+    "--static-format",
+    type=click.Choice(["png", "svg"]),
+    default="png",
+    show_default=True,
+    help=(
+        "Static-export format alongside the interactive HTML (T039, "
+        "ADR-008). Requires the 'viz' extras: pip install "
+        "'bin-packer-3d[viz]'."
+    ),
+)
 @click.pass_context
 def pack(
     ctx: click.Context,
@@ -95,6 +106,7 @@ def pack(
     bin_height: float,
     output_dir: Path,
     visualize: bool,
+    static_format: str,
 ) -> None:
     """Pack boxes from INPUT_FILE into bins.
 
@@ -172,7 +184,12 @@ def pack(
     if visualize and result.bins:
         console.print("\n[yellow]Generating visualizations...[/yellow]")
         plotter = Plotter3D()
-        files = plotter.plot_result(result, output_dir)
+        files = plotter.plot_result(
+            result,
+            output_dir,
+            dataset=input_file.stem,
+            static_format=static_format,
+        )
         console.print(f"[green]Created {len(files)} visualization files[/green]")
 
     console.print("\n[bold green]Done![/bold green]\n")
