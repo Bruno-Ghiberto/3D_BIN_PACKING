@@ -32,11 +32,11 @@ description: "Task list for spec-02: Portfolio Polish of bin-packer-3d"
 
 **Purpose**: Toolchain updates, new optional dependency declarations, Plotly version pin, wheel-exclude updates. None of these touch user-story code — they unblock everything downstream.
 
-- [ ] T001 [P] Update `pyproject.toml`: pin Plotly to `"plotly>=5.18.0,<6.0.0"` (ADR-001) in `[project] dependencies`
-- [ ] T002 [P] Update `pyproject.toml`: add new optional group `viz = ["kaleido>=0.2.1"]` under `[project.optional-dependencies]` (ADR-001)
-- [ ] T003 [P] Update `pyproject.toml`: extend the existing `dev` extras list under `[project.optional-dependencies]` with `colorspacious` (ADR-012)
-- [ ] T004 [P] Update `pyproject.toml`: extend `[tool.hatch.build.exclude]` with `"examples/"` so the new `examples/` directory does not ship in the wheel
-- [ ] T005 [P] Update `.gitignore`: add `examples/output/` (demo command default output; ignored)
+- [x] T001 [P] Update `pyproject.toml`: pin Plotly to `"plotly>=5.18.0,<6.0.0"` (ADR-001) in `[project] dependencies`
+- [x] T002 [P] Update `pyproject.toml`: add new optional group `viz = ["kaleido>=0.2.1"]` under `[project.optional-dependencies]` (ADR-001)
+- [x] T003 [P] Update `pyproject.toml`: extend the existing `dev` extras list under `[project.optional-dependencies]` with `colorspacious` (ADR-012)
+- [x] T004 [P] Update `pyproject.toml`: extend `[tool.hatch.build.exclude]` with `"examples/"` so the new `examples/` directory does not ship in the wheel
+- [x] T005 [P] Update `.gitignore`: add `examples/output/` (demo command default output; ignored)
 - [ ] T006 Append a placeholder `[Unreleased]` block to `CHANGELOG.md` for spec-02 entries (entries will be added per task during Phases 3–8)
 
 ---

@@ -115,3 +115,6 @@ claudedocs/
 # pending merge to develop; this line keeps the spec-02 branch tree clean
 # in the meantime and will reconcile cleanly on rebase.
 .gitnexus
+
+# Demo command default output (bin-packer demo writes here when -o omitted)
+examples/output/

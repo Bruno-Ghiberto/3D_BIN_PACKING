@@ -39,7 +39,7 @@ classifiers = [
 dependencies = [
     "pandas>=2.0.0",
     "numpy>=1.24.0",
-    "plotly>=5.18.0",
+    "plotly>=5.18.0,<6.0.0",
     "click>=8.1.0",
     "pydantic>=2.0.0",
     "pydantic-settings>=2.0.0",
@@ -59,10 +59,14 @@ dev = [
     "hypothesis>=6.100.0",
     "pip-audit>=2.9.0",
     "pyyaml>=6.0",
+    "colorspacious>=1.1.2",
 ]
 docs = [
     "mkdocs-material>=9.5.0",
     "mkdocstrings[python]>=0.25.0",
+]
+viz = [
+    "kaleido>=0.2.1",
 ]
 
 [project.scripts]
@@ -87,6 +91,7 @@ exclude = [
     ".claude/",
     ".github/",
     "LINKEDIN.txt",
+    "examples/",
 ]
 
 [tool.hatch.build.targets.wheel]
