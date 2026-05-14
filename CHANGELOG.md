@@ -234,6 +234,13 @@ invocations to keep the OR-quality bar high.
   to `tests/fixtures/install_footprint_baseline.json`. Captured via
   `scripts/capture_install_footprint_baseline.py`. Wired into the aggregate
   `all_passed` output as a required check (FR-027, SC-007 — T009, T010, T024).
+- **viz**: branded Plotly theme — new `bin_packer_3d.visualization.theme`
+  module exporting `VisualisationStyle` (frozen dataclass),
+  `BIN_PACKER_3D_DARK`, `BIN_PACKER_3D_LIGHT`, and
+  `apply_theme(fig, variant="dark"|"light")`. Both variants share the
+  colourblind-safe ColorBrewer Set3 palette; backgrounds, plot surface,
+  and axis grid colours differ per variant. Idempotent application,
+  fluent return for chaining (ADR-006, FR-006, SC-006 — T015, T016).
 
 ### Changed
 
