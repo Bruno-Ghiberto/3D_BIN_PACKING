@@ -1,0 +1,9 @@
+# Snapshot fixtures for visualisation reproducibility tests.
+#
+# Populated by T036 (US2 / Phase B'-1) with:
+#   bfd/bin_1.html
+#   bfd/bin_1.png
+# (and additional algorithm/variant combinations as US2 evolves)
+#
+# Created empty in T008 (Phase A Foundational) so the directory is tracked
+# before the first snapshot lands.
