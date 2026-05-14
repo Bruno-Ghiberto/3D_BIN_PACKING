@@ -84,6 +84,7 @@ output_*/
 # Data files (keep sample in DATASETS)
 *.csv
 !DATASETS/*.csv
+!examples/*.csv
 
 # Temporary and test files
 *.tmp
