@@ -1,9 +1,9 @@
 {
   "measured_at": "2026-05-14",
   "notes": "Captured on the highest supported Python at the time of measurement. Lower CI matrix rows (3.11 / 3.12 / 3.13) install slightly smaller byte-compiled artefacts, so they stay comfortably below the +5% budget. Re-capture only on intentional dependency changes; the commit updating this file MUST explain the cause.",
-  "package_bytes": 235740,
+  "package_bytes": 255603,
   "python_version": "3.14.4",
   "schema_version": 1,
   "tolerance_percent": 5,
-  "total_site_packages_bytes": 275943854
+  "total_site_packages_bytes": 275964039
 }

@@ -234,6 +234,19 @@ invocations to keep the OR-quality bar high.
   to `tests/fixtures/install_footprint_baseline.json`. Captured via
   `scripts/capture_install_footprint_baseline.py`. Wired into the aggregate
   `all_passed` output as a required check (FR-027, SC-007 — T009, T010, T024).
+- **data**: procedurally generated headline dataset — new
+  `scripts/generate_headline_dataset.py` (bin-feasibility-driven recursive
+  guillotine cuts, ADR-009) plus seed file `examples/headline.seed` and
+  committed canonical CSV `examples/headline.csv` (8 boxes, ~65% BFD
+  utilisation on default 860x890x1040 mm bin). Same seed → byte-identical
+  CSV regeneration; `tests/unit/test_dataset_generator.py` enforces
+  determinism + BFD ≥60% + runtime ≤5s budget (FR-034, SC-005, SC-006 —
+  T011..T014).
+- **models**: `Placement.colour` cached property — augments
+  `bin_packer_3d.models.placement.Placement` with a hash-indexed palette
+  entry derived from `self.box.id`. Uses local import of `colour_for_box`
+  to avoid a top-level models→visualization edge; not serialised by
+  `to_dict()` (placements.csv schema unchanged) (FR-006 — T022, T023).
 - **viz**: deterministic colourblind-safe palette — new
   `bin_packer_3d.visualization.palette` module exposing `SET3` (12-entry
   ColorBrewer palette, ordered for max colourblind discrimination) and
