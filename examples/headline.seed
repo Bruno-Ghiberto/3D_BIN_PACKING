@@ -1,0 +1,7 @@
+{
+  "seed": 42,
+  "target_utilisation": 0.65,
+  "bin_dimensions": [860.0, 890.0, 1040.0],
+  "n_boxes": 8,
+  "min_box_volume_mm3": 50000.0
+}

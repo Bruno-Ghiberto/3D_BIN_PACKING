@@ -27,7 +27,13 @@ from pathlib import Path
 
 from bin_packer_3d.algorithms.bfd import BestFitDecreasingPacker
 from bin_packer_3d.config import PackerConfig
-from bin_packer_3d.data.loaders import load_boxes_from_csv
+from bin_packer_3d.data.loaders import ColumnMapping, load_boxes_from_csv
+
+# Headline CSV uses the legacy single-letter column convention
+# (ITEM,W,H,L,CANTIDAD,CAJA,DESCRIPCION) per the headline-dataset.md
+# contract. ColumnMapping defaults assume length/width/height — pass the
+# legacy mapping explicitly.
+HEADLINE_MAPPING = ColumnMapping(length="L", width="W", height="H", identifier="ITEM")
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 GENERATOR_SCRIPT = REPO_ROOT / "scripts" / "generate_headline_dataset.py"
@@ -77,7 +83,7 @@ def test_bfd_utilisation_meets_floor(tmp_path: Path) -> None:
     out = tmp_path / "headline.csv"
     _run_generator(out)
 
-    report = load_boxes_from_csv(str(out))
+    report = load_boxes_from_csv(str(out), mapping=HEADLINE_MAPPING)
     boxes = list(report.boxes)
     assert boxes, "Generator emitted zero boxes — empty dataset"
 
@@ -86,7 +92,7 @@ def test_bfd_utilisation_meets_floor(tmp_path: Path) -> None:
     result = packer.pack(boxes)
 
     total_bin_volume = result.bins_used * BIN_VOLUME
-    packed_volume = sum(p.box.width * p.box.height * p.box.length for p in result.placements)
+    packed_volume = sum(p.box.width * p.box.height * p.box.length for p in result.all_placements())
     utilisation = packed_volume / total_bin_volume if total_bin_volume else 0.0
 
     assert utilisation >= UTILISATION_FLOOR, (
