@@ -104,16 +104,16 @@ description: "Task list for spec-02: Portfolio Polish of bin-packer-3d"
 
 ### Tests for User Story 2 (Strict TDD) ⚠️
 
-- [ ] T035 [P] [US2] Write red test `tests/integration/test_visualisation_e2e.py` asserting (a) two consecutive `bin-packer pack` runs on `examples/headline.csv` with the same `--strategy bfd` produce byte-identical `bin_*.html`, (b) the corresponding `bin_*.png` files are pixel-equal (compare via `hashlib.sha256` of the raw bytes; Kaleido + Plotly are pinned so byte-equality is achievable), (c) the rendered HTML contains the project's branded title format and stats overlay
-- [ ] T036 [P] [US2] Generate snapshot fixtures: run `bin-packer pack examples/headline.csv --strategy bfd --visualize -o tests/fixtures/expected/bfd/`; commit `tests/fixtures/expected/bfd/bin_1.html` and `tests/fixtures/expected/bfd/bin_1.png` as the canonical expected output (depends on T037 having shipped)
+- [x] T035 [P] [US2] Write red test `tests/integration/test_visualisation_e2e.py` asserting (a) two consecutive `bin-packer pack` runs on `examples/headline.csv` with the same `--strategy bfd` produce byte-identical `bin_*.html`, (b) the corresponding `bin_*.png` files are pixel-equal (compare via `hashlib.sha256` of the raw bytes; Kaleido + Plotly are pinned so byte-equality is achievable), (c) the rendered HTML contains the project's branded title format and stats overlay
+- [x] T036 [P] [US2] Generate snapshot fixtures: run `bin-packer pack examples/headline.csv --strategy bfd --visualize -o tests/fixtures/expected/bfd/`; commit `tests/fixtures/expected/bfd/bin_1.html` and `tests/fixtures/expected/bfd/bin_1.png` as the canonical expected output (depends on T037 having shipped)
 
 ### Implementation for User Story 2
 
-- [ ] T037 [US2] Extend `src/bin_packer_3d/visualization/plotter.py`: after figure construction, call `apply_theme(fig, variant="dark")`; for each placement, assign `marker.color = placement.colour` (consuming the new `Placement.colour` property from T022); add an `Annotation`-based stats overlay reporting algorithm name, boxes placed (`N/total`), overall utilisation %, and runtime in ms (FR-007, FR-008)
-- [ ] T038 [US2] Extend `plotter.py`: add static-export branch guarded by `try: import kaleido` (ADR-001); on success, emit `bin_<N>.png` (default) or `bin_<N>.svg` (when `static_format == "svg"`); on `ImportError`, raise `RuntimeError("Static export requires 'kaleido'. Install with: pip install 'bin-packer-3d[viz]'")` (FR-009, contract `visualisation-theme.md`)
-- [ ] T039 [US2] Extend the `bin-packer pack` Click command (in `src/bin_packer_3d/cli.py`) with `--static-format` option (`png` default, `svg` opt-in) — passes through to the plotter's static-export branch
-- [ ] T040 [US2] Verify snapshot tests green: `pytest tests/integration/test_visualisation_e2e.py -v` — turns T035 green
-- [ ] T041 [US2] Update `CHANGELOG.md` `[Unreleased]` with bullet: "viz: branded Plotly theme, deterministic colours, static export via Kaleido, stats overlay"
+- [x] T037 [US2] Extend `src/bin_packer_3d/visualization/plotter.py`: after figure construction, call `apply_theme(fig, variant="dark")`; for each placement, assign `marker.color = placement.colour` (consuming the new `Placement.colour` property from T022); add an `Annotation`-based stats overlay reporting algorithm name, boxes placed (`N/total`), overall utilisation %, and runtime in ms (FR-007, FR-008)
+- [x] T038 [US2] Extend `plotter.py`: add static-export branch guarded by `try: import kaleido` (ADR-001); on success, emit `bin_<N>.png` (default) or `bin_<N>.svg` (when `static_format == "svg"`); on `ImportError`, raise `RuntimeError("Static export requires 'kaleido'. Install with: pip install 'bin-packer-3d[viz]'")` (FR-009, contract `visualisation-theme.md`)
+- [x] T039 [US2] Extend the `bin-packer pack` Click command (in `src/bin_packer_3d/cli.py`) with `--static-format` option (`png` default, `svg` opt-in) — passes through to the plotter's static-export branch
+- [x] T040 [US2] Verify snapshot tests green: `pytest tests/integration/test_visualisation_e2e.py -v` — turns T035 green
+- [x] T041 [US2] Update `CHANGELOG.md` `[Unreleased]` with bullet: "viz: branded Plotly theme, deterministic colours, static export via Kaleido, stats overlay"
 
 **Checkpoint**: Visualisations are reproducible, branded, and exportable to static formats. SC-006 (deterministic colours) measurable. SC-005 (visual claim reproducibility) supported.
 

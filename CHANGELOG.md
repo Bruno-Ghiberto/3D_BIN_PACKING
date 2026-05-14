@@ -262,6 +262,22 @@ invocations to keep the OR-quality bar high.
   colourblind-safe ColorBrewer Set3 palette; backgrounds, plot surface,
   and axis grid colours differ per variant. Idempotent application,
   fluent return for chaining (ADR-006, FR-006, SC-006 — T015, T016).
+- **viz**: branded `Plotter3D` pipeline — every emitted figure now
+  applies `apply_theme()`, consumes `placement.colour` for both mesh +
+  wireframe (deterministic BLAKE2b → SET3 palette per ADR-007), and
+  embeds a four-key stats overlay (algorithm, boxes placed `N/total`,
+  utilisation %, runtime bucket). HTML output is byte-identical across
+  runs (explicit `div_id="bin_<N>"`, CDN-loaded `plotly.js`, runtime
+  bucketed to a 10ms grid). Static export via Kaleido produces
+  `bin_<N>.png` (default) or `bin_<N>.svg` (opt-in via the new
+  `bin-packer pack --static-format {png,svg}` CLI flag); raises the
+  documented `RuntimeError` with install instructions when the `viz`
+  extra is absent (FR-009). Removes the legacy hardcoded
+  `COLOR_PALETTE` and the `print()` call from library code (Constitution
+  §V). Canonical snapshot fixtures at
+  `tests/fixtures/expected/bfd/bin_1.{html,png}` act as the cross-time
+  regression baseline (ADR-001 + ADR-006 + ADR-007 + ADR-011, DR-11 —
+  T035, T036, T037, T038, T039).
 
 ### Changed
 
