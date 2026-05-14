@@ -37,7 +37,7 @@ description: "Task list for spec-02: Portfolio Polish of bin-packer-3d"
 - [x] T003 [P] Update `pyproject.toml`: extend the existing `dev` extras list under `[project.optional-dependencies]` with `colorspacious` (ADR-012)
 - [x] T004 [P] Update `pyproject.toml`: extend `[tool.hatch.build.exclude]` with `"examples/"` so the new `examples/` directory does not ship in the wheel
 - [x] T005 [P] Update `.gitignore`: add `examples/output/` (demo command default output; ignored)
-- [ ] T006 Append a placeholder `[Unreleased]` block to `CHANGELOG.md` for spec-02 entries (entries will be added per task during Phases 3–8)
+- [x] T006 Append a placeholder `[Unreleased]` block to `CHANGELOG.md` for spec-02 entries (entries will be added per task during Phases 3–8)
 
 ---
 

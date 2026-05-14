@@ -217,6 +217,16 @@ invocations to keep the OR-quality bar high.
   `AlgorithmMetadata`, `BenchmarkResult`. `BenchmarkRunner` lands in
   Part 2 (T102) and joins `__all__` then.
 
+**Spec-02 Polish (v0.3.0-rc1) — placeholder:**
+
+<!-- spec-02 ### Added bullets land here as Phase A and B' tasks run.
+     Authoring tasks: T014 (data), T016 (viz theme), T019 (viz palette),
+     T024 (ci install-footprint), T041 (US2 plotter wrap-up), T057 (US3
+     docs site), T066 (US4 repo surface), T074 (US5 demo command),
+     T079 (US7 CV identity). When v0.2.0 is tagged, the spec-01 bullets
+     above migrate to [0.2.0] and this sub-heading becomes the canonical
+     [Unreleased] Added content for v0.3.0-rc1. -->
+
 ### Changed
 
 **US5 Part 1:**
