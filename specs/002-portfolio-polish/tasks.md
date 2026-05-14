@@ -62,7 +62,7 @@ description: "Task list for spec-02: Portfolio Polish of bin-packer-3d"
 - [x] T019 Author `src/bin_packer_3d/visualization/palette.py` exporting `SET3: tuple[str, ...]` (12 ColorBrewer Set3 hex strings) and `colour_for_box(box_id, palette=SET3) -> str` using BLAKE2b hash → modulo index (ADR-007) — turns T017 green
 - [x] T020 Run `python scripts/verify_palette_colourblind.py` and commit `docs/assets/palette_colourblind_check.png` — depends on T018, T019
 - [x] T021 [P] Update `src/bin_packer_3d/__init__.py`: re-export `VisualisationStyle`, `BIN_PACKER_3D_DARK`, `BIN_PACKER_3D_LIGHT`, `apply_theme`, `colour_for_box` from the top-level package; extend `__all__`
-- [ ] T022 [P] Augment `src/bin_packer_3d/models/placement.py`: add `@cached_property colour(self) -> str` that calls `palette.colour_for_box(self.box.identifier)` with a local import to avoid circular dependency (data-model.md § Augmented)
+- [x] T022 [P] Augment `src/bin_packer_3d/models/placement.py`: add `@cached_property colour(self) -> str` that calls `palette.colour_for_box(self.box.identifier)` with a local import to avoid circular dependency (data-model.md § Augmented)
 - [x] T023 [P] Write `tests/unit/test_placement_colour.py` asserting (a) same placement → same colour across calls, (b) different placement IDs → potentially different colours, (c) the `colour` attribute is NOT serialised in `placements.csv` (existing exporter unchanged)
 - [x] T024 Update `_ci-core.yml`: add the new `install-footprint` job invoking `pytest tests/integration/test_install_footprint.py`; wire it into the aggregate `all_passed` output
 

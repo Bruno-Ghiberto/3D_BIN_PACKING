@@ -7,6 +7,7 @@ within bins, including 3D coordinates and packing results.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from functools import cached_property
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -98,6 +99,22 @@ class Placement:
         if self.z1 <= other.z0 or other.z1 <= self.z0:
             return False
         return True
+
+    @cached_property
+    def colour(self) -> str:
+        """Deterministic palette colour for this placement's box (ADR-007).
+
+        Local import of `colour_for_box` avoids a top-level
+        ``models -> visualization`` dependency edge that would put a
+        rendering concern on the import path of every model consumer.
+
+        Cached per instance: the first access computes the hex string;
+        subsequent accesses return the cached value. NOT serialised by
+        :meth:`to_dict` — the placements.csv schema stays unchanged.
+        """
+        from bin_packer_3d.visualization.palette import colour_for_box
+
+        return colour_for_box(self.box.id)
 
     def to_dict(self) -> dict[str, float | int | str]:
         """Convert placement to dictionary for DataFrame export."""
