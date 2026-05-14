@@ -110,3 +110,8 @@ site/
 
 # Internal development documentation
 claudedocs/
+
+# Local tooling index (GitNexus). Skill pack lives on chore/gitnexus-install
+# pending merge to develop; this line keeps the spec-02 branch tree clean
+# in the meantime and will reconcile cleanly on rebase.
+.gitnexus
