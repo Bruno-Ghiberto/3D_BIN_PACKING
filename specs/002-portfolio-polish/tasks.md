@@ -64,7 +64,7 @@ description: "Task list for spec-02: Portfolio Polish of bin-packer-3d"
 - [ ] T021 [P] Update `src/bin_packer_3d/__init__.py`: re-export `VisualisationStyle`, `BIN_PACKER_3D_DARK`, `BIN_PACKER_3D_LIGHT`, `apply_theme`, `colour_for_box` from the top-level package; extend `__all__`
 - [ ] T022 [P] Augment `src/bin_packer_3d/models/placement.py`: add `@cached_property colour(self) -> str` that calls `palette.colour_for_box(self.box.identifier)` with a local import to avoid circular dependency (data-model.md § Augmented)
 - [ ] T023 [P] Write `tests/unit/test_placement_colour.py` asserting (a) same placement → same colour across calls, (b) different placement IDs → potentially different colours, (c) the `colour` attribute is NOT serialised in `placements.csv` (existing exporter unchanged)
-- [ ] T024 Update `_ci-core.yml`: add the new `install-footprint` job invoking `pytest tests/integration/test_install_footprint.py`; wire it into the aggregate `all_passed` output
+- [x] T024 Update `_ci-core.yml`: add the new `install-footprint` job invoking `pytest tests/integration/test_install_footprint.py`; wire it into the aggregate `all_passed` output
 
 **Checkpoint**: Foundation ready — every user story may now begin in parallel. Examples directory has `headline.csv` + seed. Theme, palette, and palette-verification artefact in place. Install-footprint guard active.
 

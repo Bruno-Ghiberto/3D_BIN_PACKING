@@ -227,6 +227,14 @@ invocations to keep the OR-quality bar high.
      above migrate to [0.2.0] and this sub-heading becomes the canonical
      [Unreleased] Added content for v0.3.0-rc1. -->
 
+- **ci**: install-footprint regression guard — new `_ci-core.yml` job
+  (`install-footprint`) invokes `pytest tests/integration/test_install_footprint.py`
+  against a fresh `pip install` of the package and fails if the per-package
+  or total `site-packages/` footprint exceeds +5% of the baseline committed
+  to `tests/fixtures/install_footprint_baseline.json`. Captured via
+  `scripts/capture_install_footprint_baseline.py`. Wired into the aggregate
+  `all_passed` output as a required check (FR-027, SC-007 — T009, T010, T024).
+
 ### Changed
 
 **US5 Part 1:**
