@@ -16,7 +16,14 @@ repos:
       - id: check-toml
       - id: check-json
       - id: check-added-large-files
-        args: [--maxkb=500]
+        # 5000 KB matches the README hero asset budget documented in
+        # docs/maintainers.md § 3 (Hero asset regeneration). The guard
+        # still catches genuine accidents — 5 MB is far larger than any
+        # reasonable source file or text artefact, so committed
+        # datasets, ML model weights, or build artefacts still trip it.
+        # Legitimate large media live under docs/assets/ and the README
+        # references them by relative path.
+        args: [--maxkb=5000]
       - id: check-merge-conflict
       - id: mixed-line-ending
         args: [--fix=lf]
