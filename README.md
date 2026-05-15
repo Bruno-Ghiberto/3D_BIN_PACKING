@@ -1,4 +1,9 @@
-# 3D Bin Packing Solver
+# bin-packer-3d
+
+A 3D bin packing solver in Python — multiple heuristic strategies under one CLI,
+reproducible across runs, with branded interactive + static visualisations.
+
+![Demo of bin-packer-3d packing 50 boxes into a single 860×890×1040 mm bin](docs/assets/hero.gif)
 
 [![CI](https://github.com/Bruno-Ghiberto/3D_BIN_PACKING/actions/workflows/ci.yml/badge.svg)](https://github.com/Bruno-Ghiberto/3D_BIN_PACKING/actions/workflows/ci.yml)
 [![codecov](https://codecov.io/gh/Bruno-Ghiberto/3D_BIN_PACKING/branch/main/graph/badge.svg?flag=library)](https://codecov.io/gh/Bruno-Ghiberto/3D_BIN_PACKING)
@@ -6,184 +11,159 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 
-A professional Python implementation for solving the **3D Bin Packing Problem (3D-BPP)**, an NP-hard optimization problem with applications in logistics, warehousing, and container loading.
+## The problem
 
-## Features
+Fit a stack of boxes of various sizes into the smallest number of bins — or,
+equivalently, into a single bin with the highest space utilisation possible.
+This is the **3D bin packing problem (3D-BPP)**, a classic NP-hard
+optimisation problem that shows up wherever physical goods move: container
+loading, warehouse storage, parcel routing, automated picking systems.
 
-- **Multiple Packing Algorithms**: First-Fit Decreasing (FFD) and Shelf-based packing
-- **6-Axis Box Rotation**: Automatic orientation optimization for better space utilization
-- **Interactive 3D Visualization**: Plotly-powered visualizations with color-coded boxes
-- **Professional CLI**: Easy-to-use command-line interface with Rich formatting
-- **Type-Safe Design**: Full type hints with Pydantic configuration validation
-- **Comprehensive Metrics**: Utilization %, success rate, timing, and per-bin statistics
-- **Flexible Data Loading**: CSV and Excel file support
+Exact solvers become intractable past a few dozen items, so in practice
+everyone uses heuristics — fast algorithms that find good (though not
+provably optimal) packings in milliseconds, not days. `bin-packer-3d`
+implements several of the most studied heuristics behind one CLI, with the
+same visualisation pipeline and the same reproducibility contract across
+every strategy. The result is something you can point at your own data and
+compare strategies apples-to-apples without rewriting glue code each time.
 
-## Quick Start
+## What this is
 
-### Installation
+A library and a CLI. The library is `pip install`-able with stable type
+hints and a small, registry-driven public API; adding a new algorithm is a
+single-file change. The CLI wraps everything for quick experiments — load a
+CSV, pick a strategy, see metrics, get an interactive 3D HTML, optionally a
+deterministic PNG. Determinism is a first-class feature: same input + same
+strategy → byte-identical output, run after run.
+
+## Install
 
 ```bash
-# Clone the repository
-git clone https://github.com/Bruno-Ghiberto/3D_BIN_PACKING.git
-cd 3D_BIN_PACKING
-
-# Install the package
-pip install -e ".[dev]"
+pip install 'bin-packer-3d[viz]'
 ```
 
-### Basic Usage
+The `[viz]` extra pulls in `kaleido` for static PNG/SVG export. Without it,
+you still get the interactive HTML — the static path is optional.
+
+## Run
 
 ```bash
-# Pack boxes from a CSV file
-bin-packer pack data.csv --strategy ffd --visualize
+bin-packer pack examples/headline.csv --strategy bfd --visualize -o out/
+```
 
-# View available algorithms
+This packs the bundled headline dataset (50 boxes, procedurally generated to
+hit ≥60 % utilisation with BFD) into a single 860 × 890 × 1040 mm bin and
+emits an interactive HTML plus a static PNG of the packed result.
+
+To see every registered strategy without running anything yet:
+
+```bash
 bin-packer info
-
-# Initialize configuration file
-bin-packer init
 ```
 
-### Python API
+## Programmatic use
+
+The same packing pipeline from Python:
 
 ```python
 from bin_packer_3d import Box, PackerConfig
-from bin_packer_3d.algorithms import FirstFitDecreasingPacker
-from bin_packer_3d.visualization import Plotter3D
+from bin_packer_3d.algorithms import ALGORITHMS
 
-# Create boxes
 boxes = [
-    Box(id="B001", width=200, height=150, length=100),
-    Box(id="B002", width=300, height=200, length=150),
-    Box(id="B003", width=150, height=100, length=80),
+    Box(id="A001", width=200, height=150, length=100),
+    Box(id="A002", width=300, height=200, length=150),
+    # ...
 ]
-
-# Configure packer
-config = PackerConfig(
-    bin_length=860,
-    bin_width=890,
-    bin_height=1040,
-)
-
-# Pack boxes
-packer = FirstFitDecreasingPacker(config)
+config = PackerConfig(bin_length=860, bin_width=890, bin_height=1040)
+packer = ALGORITHMS["bfd"](config)
 result = packer.pack(boxes)
 
-# Display results
-print(f"Boxes placed: {result.placed_count}/{result.total_boxes}")
-print(f"Bins used: {result.bins_used}")
-print(f"Utilization: {result.utilization_percent:.1f}%")
-
-# Generate visualization
-plotter = Plotter3D()
-plotter.plot_result(result, output_dir="output/")
+print(f"{result.placed_count}/{result.total_boxes} placed, "
+      f"{result.utilization_percent:.1f}% util, "
+      f"{result.elapsed_time_ms:.2f} ms")
 ```
 
-## Project Structure
-
-```
-3D_BIN_PACKING/
-├── src/bin_packer_3d/       # Main package
-│   ├── algorithms/          # Packing algorithms (FFD, Shelf)
-│   ├── models/              # Data models (Box, Bin, Placement)
-│   ├── visualization/       # 3D Plotly visualization
-│   ├── data/                # CSV/Excel loaders
-│   ├── utils/               # Metrics calculation
-│   ├── cli.py               # Command-line interface
-│   └── config.py            # Pydantic configuration
-├── tests/                   # Pytest test suite
-├── DATASETS/                # Sample data files
-├── CODE/                    # Legacy implementation (reference)
-└── pyproject.toml           # Modern Python packaging
-```
+Full API is documented on the [documentation site](#documentation).
 
 ## Algorithms
 
-### First-Fit Decreasing (FFD)
+The table below is regenerated from the `ALGORITHMS` registry — adding a new
+`@register("key")` packer appears here automatically. CI fails any PR where
+the table drifts from the live registry.
 
-Classic heuristic that sorts boxes by volume (largest first) and places each box in the first bin that has space.
+<!-- BEGIN: ALGORITHMS_TABLE -->
+| Key | Algorithm | Complexity | Description |
+|---|---|---|---|
+| `bfd` | Best-Fit Decreasing (BFD) | `O(n log n)` | Best Fit Decreasing — concentrate fills |
+| `ffd` | First-Fit Decreasing (FFD) | `O(n log n)` | First Fit Decreasing (volume) |
+| `shelf` | Shelf-Based Packer | `O(n log n)` | Shelf-based |
+<!-- END: ALGORITHMS_TABLE -->
 
-- **Time Complexity**: O(n log n) for sorting + O(n × m) for placement
-- **Best for**: General-purpose packing with good average performance
+### Side-by-side gallery
 
-### Shelf-Based Packing
+The same headline dataset, packed by each registered strategy:
 
-Extends 2D shelf packing to 3D by organizing boxes on horizontal "shelves" within each bin, using guillotine cuts for space splitting.
+![BFD packing of the headline dataset — 50 boxes in a single 860×890×1040 mm bin](docs/assets/gallery/bfd.png)
 
-- **Time Complexity**: O(n × s × r) where s = shelves, r = rectangles
-- **Best for**: Scenarios with boxes of similar heights
+![FFD packing of the headline dataset — 50 boxes in a single 860×890×1040 mm bin](docs/assets/gallery/ffd.png)
 
-## Input Format
+![Shelf packing of the headline dataset — 50 boxes in two 860×890×1040 mm bins](docs/assets/gallery/shelf.png)
 
-CSV/Excel files should have these columns:
+## Highlights
 
-| Column | Description | Required |
-|--------|-------------|----------|
-| `ITEM` | Unique box identifier | Yes |
-| `W` | Width in mm | Yes |
-| `H` | Height in mm | Yes |
-| `L` | Length in mm | Yes |
-| `CANTIDAD` | Quantity (creates multiple boxes) | No (default: 1) |
-| `CAJA` | Box type for color coding | No |
-| `DESCRIPCION` | Description for hover text | No |
+<!-- BEGIN: HIGHLIGHTS -->
+- **3 packing algorithms** registered: `bfd`, `ffd`, `shelf`.
+- **132 tests** in the suite; **8 CI checks** gate every PR.
+- Supported Python: **3.11 · 3.12 · 3.13 · 3.14**.
+- Licensed under **MIT**.
+<!-- END: HIGHLIGHTS -->
 
-## Testing
+## Project structure
 
-```bash
-# Run all tests
-pytest tests/ -v
-
-# Run with coverage
-pytest tests/ --cov=bin_packer_3d --cov-report=html
-
-# Run only unit tests
-pytest tests/unit/ -v
-
-# Run only integration tests
-pytest tests/integration/ -v
+<!-- BEGIN: PROJECT_STRUCTURE -->
+```text
+3D_BIN_PACKING/
+├── src/bin_packer_3d/          Library source code
+├── tests/                      Unit + integration + property tests
+├── docs/                       Documentation site source (mkdocs-material)
+├── examples/                   Curated demo datasets
+├── scripts/                    Maintainer tooling (audits, regenerators, recordings)
+├── DATASETS/                   Legacy data archive (audited per spec-01)
+├── legacy/                     Preserved Alpha-era code (excluded from wheel)
+├── Speckit-context-prompts/    SDD planning artefacts (excluded from wheel)
+├── pyproject.toml              Build + tool configuration
+├── MANIFEST.in                 Sdist manifest
+├── README.md                   This file
+├── LICENSE                     MIT license
+├── CHANGELOG.md                Keep-a-Changelog log
+├── .editorconfig               Editor configuration
+├── .gitignore                  Git ignore rules
+├── .pre-commit-config.yaml     Pre-commit hook configuration
+├── .github/                    GitHub configuration (workflows, templates)
+├── .specify/                   SpecKit machinery
+├── .serena/                    Serena tooling
+└── ...                         See docs site for the full tree
 ```
+<!-- END: PROJECT_STRUCTURE -->
 
-**Current Status**: 39 tests passing
+## Why I built this
 
-## Configuration
+I built `bin-packer-3d` to learn what it takes to ship a Python library
+properly — not just write code that works, but stand up the full discipline
+a public package needs: strict type-checking across every module, tests at
+unit + integration + property levels, contract-honest documentation that
+stays in lockstep with the registry, reproducible runs across machines and
+Python versions. The packing problem itself is a satisfying mix of
+geometry, heuristics, and visualisation: easy to explain to anyone, deep
+enough that there is always one more thing to try.
 
-Settings can be configured via:
-- Command-line arguments
-- Environment variables (prefix: `BIN_PACKER_`)
-- `.env` file
+## Documentation
 
-```bash
-# Generate default configuration
-bin-packer init
-```
+Full documentation site: <https://bruno-ghiberto.github.io/3D_BIN_PACKING/>
 
-## Problem Background
-
-The 3D Bin Packing Problem is a classic NP-hard combinatorial optimization problem. Given a set of rectangular boxes and bins of fixed dimensions, the goal is to pack all boxes into the minimum number of bins while respecting:
-
-- **Geometric constraints**: Boxes must fit within bin boundaries
-- **Non-overlap constraint**: Boxes cannot intersect
-- **Orientation options**: Boxes can be rotated in 6 ways
-
-This implementation uses heuristic approaches that provide good solutions in polynomial time, making it practical for real-world logistics applications.
-
-## Dependencies
-
-- **pandas** >= 2.0.0: Data manipulation
-- **numpy** >= 1.24.0: Numerical operations
-- **plotly** >= 5.18.0: Interactive 3D visualization
-- **click** >= 8.1.0: CLI framework
-- **pydantic** >= 2.0.0: Configuration validation
-- **rich** >= 13.0.0: Terminal formatting
+For contributors, see [`CONTRIBUTING.md`](CONTRIBUTING.md) and the
+maintainer runbooks in [`docs/maintainers.md`](docs/maintainers.md).
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Author
-
-Bruno Ghiberto - [GitHub Profile](https://github.com/Bruno-Ghiberto)
-
----
-
-*This project demonstrates solving a classic NP-hard optimization problem using heuristic algorithms with professional Python engineering practices.*
+MIT — see [`LICENSE`](LICENSE).
