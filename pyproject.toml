@@ -78,20 +78,26 @@ Repository = "https://github.com/Bruno-Ghiberto/3D_BIN_PACKING"
 Issues = "https://github.com/Bruno-Ghiberto/3D_BIN_PACKING/issues"
 
 [tool.hatch.build]
+# Hatch exclude patterns are gitignore-style: a leading slash anchors the
+# pattern to the project root. WITHOUT the slash the pattern matches any
+# directory of that name anywhere in the tree — which previously dropped
+# `src/bin_packer_3d/benchmark/` from the wheel because `benchmark/` (no
+# slash) matched it recursively. Every root-anchored entry below is now
+# explicitly anchored.
 exclude = [
-    "legacy/",
-    "CODE/",
-    "DATASETS/*.xlsx",
-    "benchmark/",
-    "docs/",
-    "tests/",
-    "Speckit-context-prompts/",
-    "specs/",
-    ".specify/",
-    ".claude/",
-    ".github/",
-    "LINKEDIN.txt",
-    "examples/",
+    "/legacy/",
+    "/CODE/",
+    "/DATASETS/*.xlsx",
+    "/benchmark/",
+    "/docs/",
+    "/tests/",
+    "/Speckit-context-prompts/",
+    "/specs/",
+    "/.specify/",
+    "/.claude/",
+    "/.github/",
+    "/LINKEDIN.txt",
+    "/examples/",
 ]
 
 [tool.hatch.build.targets.wheel]

@@ -378,6 +378,21 @@ invocations to keep the OR-quality bar high.
 
 ### Fixed
 
+**Build / Packaging:**
+
+- `[tool.hatch.build] exclude` patterns now anchored to project root with
+  a leading slash. The previous unanchored `"benchmark/"` entry matched
+  recursively under Hatch's gitignore-style glob semantics, silently
+  dropping the `src/bin_packer_3d/benchmark/` subpackage from the wheel.
+  Result: every `pip install bin-packer-3d` from the wheel raised
+  `ModuleNotFoundError: No module named 'bin_packer_3d.benchmark'` at
+  the very first `import bin_packer_3d` (the package's own `__init__`
+  re-exports `BenchmarkResult`). Hidden by the editable install used in
+  dev + CI. All exclude entries are now anchored (`/legacy/`, `/CODE/`,
+  `/benchmark/`, …) for defense-in-depth, and a new `wheel-import-smoke`
+  CI job builds the wheel and imports every subpackage from a fresh
+  venv so this regression class is caught at PR time.
+
 **US4 Repository Hygiene:**
 
 - `CODE/*.py` with hardcoded `C:\Users\bghiberto\source\repos\…`
