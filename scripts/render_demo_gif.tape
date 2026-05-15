@@ -46,9 +46,22 @@ Set Padding 18
 Set Framerate 8
 Set TypingSpeed 45ms
 
-# === Setup (hidden) — fresh prompt, clean working directory =================
+# === Setup (hidden) — force clean bash + minimal prompt ===================
+# `Set Shell "bash"` above is a hint, but on a maintainer machine where
+# the default shell is zsh with an interactive prompt framework
+# (powerlevel10k, starship, etc.), ttyd's terminal emulation cannot
+# render the prompt's escape sequences and they leak through as visual
+# garbage ("$ { _ p9k__ ... }" segments in the recorded frames).
+# `exec bash --noprofile --norc` replaces the started shell with a
+# fresh bash that does not source any rc files, then we set a minimal
+# PS1 explicitly so the recorded prompt is consistent across machines.
+# CWD stays at whatever directory `vhs` was invoked from — the
+# maintainers.md runbook mandates the repo root so `examples/headline.csv`
+# resolves with the relative path used below.
 Hide
-Type "cd $(mktemp -d -t bin-packer-hero-XXXX)"
+Type "exec bash --noprofile --norc"
+Enter
+Type "PS1='$ '"
 Enter
 Type "clear"
 Enter
@@ -70,13 +83,16 @@ Enter
 Sleep 2500ms
 
 # === Command 3: pack the bundled headline dataset with BFD =================
-Type "bin-packer pack examples/headline.csv --strategy bfd --visualize -o out/"
+# Output directories live under /tmp/ to avoid littering the repo
+# (the recording's CWD is the project root so it has write access to
+# the working tree). /tmp/hero-* paths are wiped at next reboot.
+Type "bin-packer pack examples/headline.csv --strategy bfd --visualize -o /tmp/hero-pack/"
 Sleep 300ms
 Enter
 Sleep 3500ms
 
 # === Command 4: demo — every registered algorithm side by side =============
-Type "bin-packer demo -o demo/"
+Type "bin-packer demo -o /tmp/hero-demo/"
 Sleep 300ms
 Enter
 Sleep 3500ms
@@ -86,7 +102,7 @@ Sleep 3500ms
 # meaningfully capture. We substitute `ls` of the produced files so
 # the viewer sees the concrete output paths and can recognise the
 # bin_<N>.html files referenced in the README narrative.
-Type "ls -1 demo/bfd/"
+Type "ls -1 /tmp/hero-demo/bfd/"
 Sleep 300ms
 Enter
 Sleep 2500ms
