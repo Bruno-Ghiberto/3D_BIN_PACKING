@@ -59,6 +59,7 @@ dev = [
     "hypothesis>=6.100.0",
     "pip-audit>=2.9.0",
     "pyyaml>=6.0",
+    "types-PyYAML>=6.0",
     "colorspacious>=1.1.2",
 ]
 docs = [
