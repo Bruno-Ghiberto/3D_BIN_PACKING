@@ -278,6 +278,31 @@ invocations to keep the OR-quality bar high.
   `tests/fixtures/expected/bfd/bin_1.{html,png}` act as the cross-time
   regression baseline (ADR-001 + ADR-006 + ADR-007 + ADR-011, DR-11 —
   T035, T036, T037, T038, T039).
+- **docs**: README rewrite — `README.md` rewritten end-to-end per
+  spec-02 § US1. Hero `docs/assets/hero.gif` (recorded by
+  `scripts/render_demo_gif.tape` via `vhs`) opens the file with the
+  mandated alt text "Demo of bin-packer-3d packing 50 boxes into a
+  single 860×890×1040 mm bin" (FR-022, FR-036). Three
+  marker-delimited blocks — `ALGORITHMS_TABLE`, `HIGHLIGHTS`,
+  `PROJECT_STRUCTURE` — are deterministic projections of live repo
+  state populated by `scripts/regenerate_readme.py` (ADR-004,
+  ADR-005, contracts/algorithm-card-source.md,
+  contracts/repository-structure.md). New `scripts/regenerate_readme.py`
+  offers a `--check` mode for drift detection in CI. New runbook in
+  `docs/maintainers.md § 3. Hero asset regeneration` covers the
+  vhs recording loop. Three integration tests
+  (`test_readme_drift.py`, `test_readme_alt_text.py`,
+  `test_highlights_drift.py`) enforce the contract — FR-014, FR-015,
+  FR-016, FR-022, FR-036 — T025..T034.
+- **docs**: comparison gallery PNGs — `docs/assets/gallery/{bfd,
+  ffd,shelf}.png` (one packed-bin static export per registered
+  algorithm) generated registry-driven by invoking `bin-packer pack`
+  against `examples/headline.csv`. Each PNG is the `bin_1` of its
+  algorithm's run, rendered through US2's branded plotter pipeline
+  (BIN_PACKER_3D_DARK theme, ADR-006 + ADR-007). Adding a new
+  `@register("key")` packer requires generating one matching
+  `docs/assets/gallery/<key>.png`; the README gallery section
+  references the file by registry-driven path (FR-005 — T033).
 
 ### Changed
 
