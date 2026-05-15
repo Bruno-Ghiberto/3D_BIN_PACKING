@@ -113,7 +113,7 @@ The same headline dataset, packed by each registered strategy:
 
 <!-- BEGIN: HIGHLIGHTS -->
 - **3 packing algorithms** registered: `bfd`, `ffd`, `shelf`.
-- **132 tests** in the suite; **8 CI checks** gate every PR.
+- **137 tests** in the suite; **8 CI checks** gate every PR.
 - Supported Python: **3.11 · 3.12 · 3.13 · 3.14**.
 - Licensed under **MIT**.
 <!-- END: HIGHLIGHTS -->
