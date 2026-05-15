@@ -108,7 +108,82 @@ informational PR comments.
 
 ---
 
-## 3. Reserved sections (deferred to later invocations)
+## 3. Hero asset regeneration (T030, FR-022)
+
+The README hero `docs/assets/hero.gif` is a vhs-recorded terminal cast
+of the 5-command flow from `specs/002-portfolio-polish/quickstart.md`.
+It is the README's first-viewport asset (FR-022) and must reflect the
+current CLI behaviour: any change to `bin-packer info` output (new
+algorithm registered), `bin-packer pack` (flag/format change), or
+`bin-packer demo` (comparison output shape) drifts the GIF and is a
+maintainer-action to regenerate.
+
+This step is **not automated in CI** because `vhs` requires a TTY and
+network access for asset uploads; recording from a non-interactive
+GitHub Actions runner produces blank or truncated GIFs. The tape lives
+in the repo at `scripts/render_demo_gif.tape` and is reproducible from
+a clean Linux env in under 90 seconds end-to-end.
+
+### Prerequisites
+
+- `vhs >= 0.11` and `ttyd >= 1.7` on PATH.
+  `brew install vhs ttyd` on Linux with Homebrew installed; `ffmpeg`
+  is also required and is typically already present (`ffmpeg-free`
+  from the distro repo works).
+- A fresh venv with `bin-packer-3d` installed including the `viz`
+  extra. The tape's recorded prompt assumes `bin-packer` is on PATH
+  and that `examples/headline.csv` is reachable from the working
+  directory.
+
+### Steps
+
+```bash
+# 1. Spin a clean venv and install the package + viz extras.
+python -m venv /tmp/hero-venv
+source /tmp/hero-venv/bin/activate
+pip install -e '.[viz]'
+
+# 2. Run vhs from the repo root so the tape's `examples/headline.csv`
+#    relative path resolves correctly.
+vhs scripts/render_demo_gif.tape -o docs/assets/hero.gif
+
+# 3. Spot-check the GIF in a browser or image viewer.
+xdg-open docs/assets/hero.gif
+
+# 4. Commit the result.
+git add docs/assets/hero.gif
+git commit -m "docs(assets): regenerate hero.gif via scripts/render_demo_gif.tape"
+
+# 5. Deactivate and remove the throwaway venv.
+deactivate
+rm -rf /tmp/hero-venv
+```
+
+### Acceptance
+
+- File at `docs/assets/hero.gif` exists, is < 5 MB, plays in a browser
+  without artefacts, and shows every command from the tape's
+  recording section.
+- The README's `![…](docs/assets/hero.gif)` markdown renders the
+  asset in GitHub's web view (verifiable from any commit on a
+  pushed branch).
+- `tests/integration/test_readme_alt_text.py` passes — the hero
+  image is referenced by exactly the path
+  `docs/assets/hero.gif` with non-empty alt text per FR-036.
+
+### Troubleshooting
+
+| Symptom | Resolution |
+|---|---|
+| `vhs: command not found` | `brew install vhs ttyd` (Linux) or follow <https://github.com/charmbracelet/vhs#installation>. |
+| GIF is blank or truncated | vhs is running in a non-TTY context (e.g. wrapped in `nohup`). Run directly in an interactive shell. |
+| Recording shows pip's actual install output | The tape Ctrl+U-clears the `pip install` line by design; check that the venv pre-install ran AHEAD of `vhs`. |
+| `bin-packer: command not found` inside the recording | The active venv is not the one with `bin-packer-3d[viz]` installed; re-activate before invoking `vhs`. |
+| GIF exceeds the 5 MB README budget | Lower `Set Width` / `Set Height` in the tape, or shorten `Sleep` durations. The 800×500 / 8 fps / ~27 s defaults land at ~2-3 MB on a typical run. |
+
+---
+
+## 4. Reserved sections (deferred to later invocations)
 
 These will be authored by future tasks; placeholders are listed here so
 the structure of `maintainers.md` stays predictable:
